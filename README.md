@@ -6,7 +6,7 @@ Each tool is a single HTML file. Download it and open it, or use the hosted link
 
 ## Tools
 
-### [Frame Grab](./frame-grab/)
+### [Frame Grab](./tools/frame-grab)
 Pull poster frames out of video files and save them as JPEGs, without installing ffmpeg. Samples six frames per clip, skips black ones automatically, and lets you scrub to any exact moment.
 
 ## Why
