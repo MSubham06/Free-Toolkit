@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>QR Forge: link to QR code</title>
+<title>QR Forge — link to QR code</title>
+<meta name="description" content="Turn any link or text into a QR code. Basic mode for a plain code, Custom mode for colours, gradients, shapes and a transparent logo. Runs entirely in your browser." />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M21 2.5 6.5 18.75h7.1L11 29.5 25.5 13.25h-7.1z' fill='%23ffe94d'/%3E%3C/svg%3E" />
+
 <style>
   :root {
     --bg: #0b0d12;
@@ -11,450 +15,677 @@
     --surface-2: #181c26;
     --line: rgba(255,255,255,0.08);
     --line-bright: rgba(255,255,255,0.16);
-    --accent: #38bdf8;
-    --accent-deep: #0284c7;
     --text: #e8ecf3;
     --dim: rgba(232,236,243,0.52);
     --faint: rgba(232,236,243,0.3);
+
+    --tint: #38bdf8;
+    --tint-deep: #0284c7;
+
+    --volt: #ffe94d;
+    --live: #f87171;
     --good: #34d399;
-    --bad: #f87171;
+
+    --display: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Display",
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
-
+  html, body { min-height: 100%; }
   body {
-    margin: 0;
-    background:
-      radial-gradient(1000px 520px at 50% -10%, rgba(2,132,199,0.16), transparent 70%),
-      var(--bg);
-    color: var(--text);
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--body); -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--tint); outline-offset: 3px; border-radius: 4px; }
+
+  html { scrollbar-width: thin; scrollbar-color: var(--tint-deep) var(--bg); }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--tint), var(--tint-deep));
+    border-radius: 99px; border: 3px solid var(--bg);
+  }
+  ::selection { background: var(--tint); color: #04121c; }
+
+  /* ── ambient ───────────────────────────────────────────── */
+  .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.3; }
+  .blob-1 { width: 560px; height: 560px; top: -260px; right: -80px;
+    background: radial-gradient(circle, rgba(56,189,248,0.38), transparent 66%);
+    animation: float-a 21s ease-in-out infinite; }
+  .blob-2 { width: 460px; height: 460px; top: 6%; left: -160px;
+    background: radial-gradient(circle, rgba(2,132,199,0.34), transparent 66%);
+    animation: float-b 25s ease-in-out infinite; }
+  .blob-3 { width: 420px; height: 420px; top: 62%; right: -160px;
+    background: radial-gradient(circle, rgba(255,233,77,0.12), transparent 66%);
+    animation: float-a 29s ease-in-out infinite reverse; }
+  @keyframes float-a {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(-60px,70px,0) scale(1.12); }
+  }
+  @keyframes float-b {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    50% { transform: translate3d(80px,-50px,0) scale(1.08); }
+  }
+  .speck { position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--tint); animation: rise 16s linear infinite; }
+  @keyframes rise {
+    0% { transform: translateY(0) scale(.6); opacity: 0; }
+    14% { opacity: .5; } 86% { opacity: .3; }
+    100% { transform: translateY(-92vh) scale(1); opacity: 0; }
   }
 
-  .shell { max-width: 1160px; margin: 0 auto; padding: 40px 24px 80px; }
+  .shell { max-width: none; padding: 0 clamp(18px, 3.5vw, 56px) 80px; position: relative; }
 
-  header { display: flex; align-items: flex-start; gap: 16px; }
-  .mark {
-    width: 46px; height: 46px; flex: none;
-    border-radius: 13px;
-    background: linear-gradient(145deg, var(--accent), var(--accent-deep));
-    display: grid; place-items: center;
-    box-shadow: 0 10px 26px rgba(2,132,199,0.32);
-  }
-  h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.025em; font-weight: 700; }
-  .tag { margin: 5px 0 0; font-size: 0.86rem; color: var(--dim); line-height: 1.6; max-width: 62ch; }
-  .privacy {
-    margin-top: 10px;
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 5px 11px; border-radius: 99px;
-    background: rgba(52,211,153,0.1);
-    border: 1px solid rgba(52,211,153,0.22);
-    color: #6ee7b7; font-size: 0.72rem; font-weight: 600;
-  }
+  .reveal { opacity: 0; transform: translateY(22px); }
+  .go .reveal { animation: enter .8s cubic-bezier(.2,.75,.25,1) forwards; }
+  .go .d1 { animation-delay: .04s; } .go .d2 { animation-delay: .13s; }
+  .go .d3 { animation-delay: .24s; } .go .d4 { animation-delay: .36s; }
+  .go .d5 { animation-delay: .48s; }
+  @keyframes enter { to { opacity: 1; transform: none; } }
 
-  .layout {
-    margin-top: 30px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
-    gap: 20px;
-    align-items: start;
+  /* ── header ────────────────────────────────────────────── */
+  header { padding: 34px 0 0; }
+  .back {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 8px 14px 8px 11px; border-radius: 99px;
+    border: 1px solid var(--line-bright); background: var(--surface);
+    text-decoration: none;
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+    transition: color .18s, border-color .18s, transform .18s;
   }
+  .back svg { color: var(--volt); transition: transform .3s cubic-bezier(.2,.75,.25,1); }
+  .back:hover { color: var(--text); border-color: var(--volt); transform: translateX(-3px); }
+  .back:hover svg { transform: scale(1.15); }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 18px;
+  .eyebrow {
+    margin: 24px 0 12px; display: flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint);
   }
-  .card + .card { margin-top: 16px; }
-
-  .card-title {
-    font-size: 0.7rem; font-weight: 700;
-    letter-spacing: 0.16em; text-transform: uppercase;
-    color: var(--faint);
-    margin: 0 0 12px;
+  .eyebrow::before {
+    content: ""; width: 8px; height: 8px; flex: none; border-radius: 50%;
+    background: var(--tint); box-shadow: 0 0 0 4px rgba(56,189,248,0.15);
+    animation: blink 3s ease-in-out infinite;
+  }
+  .eyebrow::after { content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--line-bright), transparent); }
+  @keyframes blink {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 4px rgba(56,189,248,0.15); }
+    50% { opacity: .5; box-shadow: 0 0 0 9px rgba(56,189,248,0.03); }
   }
 
-  label.field { display: block; font-size: 0.78rem; color: var(--dim); margin-bottom: 6px; }
-
-  input[type=text], input[type=url], textarea {
-    width: 100%;
-    padding: 11px 13px;
-    border-radius: 11px;
-    border: 1px solid var(--line-bright);
-    background: rgba(0,0,0,0.32);
-    color: var(--text);
-    font-size: 0.9rem;
-    font-family: inherit;
-    resize: vertical;
+  h1.display {
+    margin: 0; font-family: var(--display); font-weight: 900;
+    text-transform: uppercase; letter-spacing: -0.04em; line-height: .88;
+    font-size: clamp(2.6rem, 8vw, 5.6rem);
   }
-  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-  textarea { min-height: 78px; line-height: 1.5; }
-
-  .tabs { display: flex; gap: 6px; background: rgba(0,0,0,0.28); padding: 5px; border-radius: 13px; }
-  .tabs button {
-    flex: 1; padding: 9px 10px;
-    border: none; border-radius: 9px;
-    background: transparent; color: var(--dim);
-    font-size: 0.82rem; font-weight: 600; cursor: pointer;
-    transition: background .15s, color .15s;
+  h1.display .forge { color: var(--tint); }
+  @supports (-webkit-text-stroke: 1px #000) {
+    h1.display .forge { color: transparent;
+      -webkit-text-stroke: clamp(1.2px, 0.3vw, 2.6px) var(--tint); }
   }
-  .tabs button:hover { color: var(--text); }
-  .tabs button.on {
-    background: linear-gradient(180deg, var(--accent), var(--accent-deep));
-    color: #04202e;
+  .tag { margin: 18px 0 0; max-width: 60ch; font-size: .95rem; line-height: 1.62; color: var(--dim); }
+  .tag strong { color: var(--text); font-weight: 600; }
+  .local-note {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .04em; color: var(--dim);
+  }
+  .led { width: 7px; height: 7px; border-radius: 50%; background: var(--live);
+    box-shadow: 0 0 0 3px rgba(248,113,113,.16); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 3px rgba(248,113,113,.16); }
+    50% { opacity: .55; box-shadow: 0 0 0 6px rgba(248,113,113,.05); }
   }
 
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-  .col { flex: 1 1 150px; min-width: 0; }
-
-  .swatch-row { display: flex; gap: 8px; align-items: center; }
-  .swatch {
-    width: 38px; height: 38px; flex: none;
-    border-radius: 10px; border: 1px solid var(--line-bright);
-    cursor: pointer; padding: 0; overflow: hidden;
-    background: none;
+  /* ── mode switch ───────────────────────────────────────── */
+  .modes {
+    margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
-  .swatch input { width: 150%; height: 150%; margin: -25%; border: none; padding: 0; cursor: pointer; background: none; }
-  .hex {
-    flex: 1; min-width: 0;
-    padding: 9px 11px;
-    border-radius: 10px;
-    border: 1px solid var(--line-bright);
-    background: rgba(0,0,0,0.32);
-    color: var(--text);
-    font-family: ui-monospace, monospace;
-    font-size: 0.82rem;
-    text-transform: uppercase;
+  .mode {
+    position: relative; overflow: hidden; text-align: left;
+    padding: 16px 18px; border-radius: 16px;
+    border: 1px solid var(--line); background: var(--surface);
+    cursor: pointer; font-family: var(--body); color: var(--dim);
+    transition: border-color .2s, transform .2s cubic-bezier(.2,.75,.25,1), background .2s, color .2s;
   }
-
-  .presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
-  .preset {
-    border: 1px solid var(--line);
-    border-radius: 11px;
-    padding: 0; overflow: hidden;
-    cursor: pointer; background: none;
-    transition: border-color .15s, transform .1s;
+  .mode::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--tint), var(--tint-deep));
+    opacity: 0; transition: opacity .2s;
   }
-  .preset:hover { border-color: var(--accent); }
-  .preset:active { transform: scale(0.97); }
-  .preset .chip { height: 40px; display: block; }
-  .preset .chip svg { width: 100%; height: 100%; display: block; }
-  .preset .nm {
-    display: block; padding: 5px 4px;
-    font-size: 0.64rem; color: var(--dim);
-    text-align: center;
-    background: rgba(0,0,0,0.28);
+  .mode:hover { transform: translateY(-2px); border-color: var(--line-bright); color: var(--text); }
+  .mode.on { border-color: var(--tint); color: var(--text); background: var(--surface-2); }
+  .mode.on::before { opacity: 1; }
+  .mode b {
+    display: block; font-family: var(--display); font-size: 1.05rem; font-weight: 800;
+    letter-spacing: -.02em; text-transform: uppercase;
+  }
+  .mode span {
+    display: block; margin-top: 3px;
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .06em; color: var(--faint);
   }
 
-  .stack { display: flex; flex-direction: column; gap: 14px; }
-
-  .seg { display: flex; gap: 5px; background: rgba(0,0,0,0.28); padding: 4px; border-radius: 11px; }
-  .seg button {
-    flex: 1; padding: 7px 6px;
-    border: none; border-radius: 8px;
-    background: transparent; color: var(--dim);
-    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  /* ── workspace ─────────────────────────────────────────── */
+  .workspace {
+    margin-top: 20px;
+    display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 18px; align-items: start;
   }
-  .seg button.on { background: rgba(255,255,255,0.1); color: var(--text); }
 
-  .range-row { display: flex; align-items: center; gap: 10px; }
-  input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
-  .val { font-size: 0.75rem; color: var(--faint); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
-
-  .preview-wrap {
-    position: sticky; top: 24px;
-  }
   .stage {
-    display: grid; place-items: center;
-    padding: 22px;
-    border-radius: 16px;
-    background:
-      linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%),
-      linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.03) 75%);
+    position: sticky; top: 18px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; padding: 18px; overflow: hidden;
+  }
+  .canvas-wrap {
+    position: relative; border-radius: 14px; overflow: hidden;
+    background-color: #0e1117;
+    background-image:
+      linear-gradient(45deg, rgba(255,255,255,.045) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,255,255,.045) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,.045) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.045) 75%);
     background-size: 18px 18px;
-    background-position: 0 0, 9px 9px;
-    border: 1px solid var(--line);
-    min-height: 300px;
+    background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    display: grid; place-items: center; padding: 14px;
   }
-  #preview { width: 100%; max-width: 300px; height: auto; display: block; border-radius: 8px; }
-  .empty-note { color: var(--faint); font-size: 0.82rem; text-align: center; line-height: 1.6; }
+  #preview { width: 100%; height: auto; display: block; border-radius: 6px; }
 
-  .meta {
-    margin-top: 12px;
-    display: flex; justify-content: space-between;
-    font-size: 0.72rem; color: var(--faint);
-    font-variant-numeric: tabular-nums;
+  .stage-meta {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+  }
+  .chip {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 99px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--faint);
+  }
+  .chip b { color: var(--tint); font-weight: 700; }
+  .chip.warn { border-color: rgba(248,113,113,.35); color: #fca5a5; }
+  .chip.ok { border-color: rgba(52,211,153,.35); color: #6ee7b7; }
+  .chip.tight { border-color: rgba(255,233,77,.4); color: var(--volt); }
+
+  .stage-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .stage-actions .wide { grid-column: 1 / -1; }
+
+  /* ── controls ──────────────────────────────────────────── */
+  .panel-stack { display: grid; gap: 14px; }
+  .group {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; overflow: hidden;
+  }
+  .group > summary {
+    list-style: none; cursor: pointer; user-select: none;
+    padding: 15px 18px; display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: .7rem; font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--dim);
+    transition: color .18s, background .18s;
+  }
+  .group > summary::-webkit-details-marker { display: none; }
+  .group > summary:hover { color: var(--text); background: rgba(255,255,255,.02); }
+  .group > summary::after {
+    content: ""; margin-left: auto; width: 7px; height: 7px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px); transition: transform .25s;
+  }
+  .group[open] > summary { color: var(--tint); }
+  .group[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
+  .group-body { padding: 4px 18px 18px; display: grid; gap: 14px; }
+
+  .row { display: grid; gap: 7px; }
+  .row > label, .lbl {
+    font-family: var(--mono); font-size: .64rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .lbl .val { margin-left: auto; color: var(--tint); font-variant-numeric: tabular-nums; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; padding: 11px 13px;
+    border-radius: 11px; border: 1px solid var(--line-bright);
+    background: rgba(0,0,0,.35); color: var(--text);
+    font-family: var(--body); font-size: .88rem;
+    transition: border-color .18s, background .18s;
+  }
+  textarea { resize: vertical; min-height: 84px; line-height: 1.5; font-family: var(--mono); font-size: .82rem; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--tint); background: rgba(0,0,0,.5); }
+  input[type=range] { width: 100%; accent-color: var(--tint); height: 3px; cursor: pointer; }
+
+  .seg { display: flex; gap: 5px; flex-wrap: wrap; }
+  .seg button {
+    flex: 1 1 auto; min-width: 58px;
+    padding: 9px 10px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--surface-2);
+    color: var(--dim); cursor: pointer;
+    font-family: var(--mono); font-size: .66rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    transition: color .16s, border-color .16s, background .16s, transform .14s;
+  }
+  .seg button:hover { color: var(--text); border-color: var(--line-bright); }
+  .seg button.on { color: #04121c; background: linear-gradient(180deg, var(--tint), var(--tint-deep)); border-color: transparent; }
+  .seg button:active { transform: translateY(1px); }
+
+  .colour { display: flex; align-items: center; gap: 8px; }
+  .colour input[type=color] {
+    width: 42px; height: 40px; flex: none; padding: 0;
+    border: 1px solid var(--line-bright); border-radius: 10px;
+    background: transparent; cursor: pointer;
+  }
+  .colour input[type=text] { font-family: var(--mono); font-size: .8rem; text-transform: uppercase; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+  .swatch {
+    width: 34px; height: 34px; border-radius: 10px;
+    border: 1px solid var(--line-bright); cursor: pointer; padding: 0;
+    transition: transform .16s cubic-bezier(.2,.75,.25,1), border-color .16s;
+  }
+  .swatch:hover { transform: translateY(-3px) scale(1.06); border-color: var(--tint); }
+
+  .check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .check input { position: absolute; opacity: 0; pointer-events: none; }
+  .box {
+    width: 19px; height: 19px; flex: none; border-radius: 6px;
+    border: 1px solid var(--line-bright); background: var(--surface-2);
+    display: grid; place-items: center; transition: background .16s, border-color .16s;
+  }
+  .box svg { opacity: 0; transform: scale(.6); transition: opacity .16s, transform .16s; }
+  .check input:checked + .box { background: var(--tint); border-color: var(--tint); }
+  .check input:checked + .box svg { opacity: 1; transform: none; color: #04121c; }
+  .check span {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .04em; color: var(--dim);
+  }
+  .check input:focus-visible + .box { outline: 2px solid var(--tint); outline-offset: 2px; }
+
+  .hintline {
+    font-family: var(--mono); font-size: .62rem; line-height: 1.55;
+    letter-spacing: .03em; color: var(--faint);
   }
 
-  .warn {
-    margin-top: 12px; padding: 10px 12px;
-    border-radius: 11px;
-    background: rgba(248,113,113,0.1);
-    border: 1px solid rgba(248,113,113,0.24);
-    color: #fca5a5; font-size: 0.76rem; line-height: 1.55;
+  /* logo drop */
+  .logo-drop {
+    border: 2px dashed var(--line-bright); border-radius: 14px;
+    padding: 22px 16px; text-align: center; cursor: pointer;
+    transition: border-color .2s, background .2s;
   }
-  .warn.ok {
-    background: rgba(52,211,153,0.09);
-    border-color: rgba(52,211,153,0.22);
-    color: #6ee7b7;
+  .logo-drop:hover, .logo-drop.over { border-color: var(--tint); background: rgba(56,189,248,.05); }
+  .logo-drop strong { display: block; font-size: .86rem; font-weight: 600; }
+  .logo-drop span {
+    display: block; margin-top: 6px;
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .05em; color: var(--faint);
+  }
+  .logo-loaded { display: flex; align-items: center; gap: 12px; }
+  .logo-thumb {
+    width: 56px; height: 56px; flex: none; border-radius: 12px;
+    border: 1px solid var(--line-bright); padding: 6px;
+    background-color: #0e1117;
+    background-image:
+      linear-gradient(45deg, rgba(255,255,255,.05) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,255,255,.05) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,.05) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.05) 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+    display: grid; place-items: center;
+  }
+  .logo-thumb img { max-width: 100%; max-height: 100%; display: block; }
+  .logo-name {
+    flex: 1; min-width: 0;
+    font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .logo-name em {
+    display: block; font-style: normal; margin-top: 3px;
+    font-family: var(--mono); font-size: .62rem; color: var(--good); letter-spacing: .04em;
   }
 
-  .actions { margin-top: 14px; display: flex; gap: 8px; }
-  button.primary, button.ghost {
-    padding: 11px 16px;
-    border: none; border-radius: 12px;
-    font-size: 0.8rem; font-weight: 700;
-    letter-spacing: 0.04em; cursor: pointer;
-    transition: filter .15s, transform .1s;
+  button.btn {
+    padding: 11px 18px; border-radius: 11px;
+    border: 1px solid transparent; cursor: pointer;
+    font-family: var(--body); font-size: .84rem; font-weight: 650;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: filter .16s, transform .14s, background .18s, border-color .18s, color .18s;
   }
-  button:active:not(:disabled) { transform: scale(0.98); }
-  button:disabled { opacity: 0.32; cursor: not-allowed; }
-  .primary {
-    flex: 1;
-    background: linear-gradient(180deg, var(--accent), var(--accent-deep));
-    color: #04202e;
-    box-shadow: 0 8px 20px rgba(2,132,199,0.28);
-  }
+  button.btn:active:not(:disabled) { transform: translateY(1px) scale(.985); }
+  button.btn:disabled { opacity: .32; cursor: not-allowed; }
+  .primary { background: linear-gradient(180deg, var(--tint), var(--tint-deep)); color: #04121c; }
   .primary:hover:not(:disabled) { filter: brightness(1.1); }
-  .ghost {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--line);
-    color: var(--dim); font-weight: 600;
-  }
-  .ghost:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: var(--text); }
-
-  .drop-logo {
-    border: 2px dashed var(--line-bright);
-    border-radius: 12px;
-    padding: 18px 12px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 0.78rem; color: var(--dim);
-    transition: border-color .15s, background .15s;
-  }
-  .drop-logo:hover { border-color: var(--accent); background: rgba(56,189,248,0.05); }
-  .logo-set { display: flex; align-items: center; gap: 10px; }
-  .logo-set img {
-    width: 44px; height: 44px; border-radius: 9px;
-    object-fit: contain; background: #fff; padding: 3px;
-  }
-  input[type=file] { display: none; }
+  .ghost { background: var(--surface-2); border-color: var(--line-bright); color: var(--dim); }
+  .ghost:hover:not(:disabled) { color: var(--text); border-color: var(--tint); }
+  .ghost.ok { color: var(--good); border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); }
 
   footer {
-    margin-top: 42px; padding-top: 22px;
-    border-top: 1px solid var(--line);
-    font-size: 0.74rem; color: var(--faint); line-height: 1.7;
+    margin-top: 46px; padding-top: 24px; border-top: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; color: var(--faint);
+  }
+  footer .spacer { flex: 1; }
+  footer a { color: var(--dim); text-decoration: none; transition: color .18s; }
+  footer a:hover { color: var(--volt); }
+  .heart { color: var(--live); display: inline-block; animation: beat 1.9s ease-in-out infinite; }
+  @keyframes beat {
+    0%,100% { transform: scale(1); } 14% { transform: scale(1.28); }
+    28% { transform: scale(1); } 42% { transform: scale(1.18); }
   }
 
+  .hide { display: none !important; }
+
   @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
-    .preview-wrap { position: static; }
-    .shell { padding: 28px 16px 60px; }
+    .workspace { grid-template-columns: 1fr; }
+    .stage { position: static; }
+    .canvas-wrap { max-width: 420px; margin: 0 auto; }
+  }
+  @media (max-width: 560px) {
+    .shell { padding: 0 16px 64px; }
+    header { padding-top: 22px; }
+    .modes { grid-template-columns: 1fr; }
+    .two { grid-template-columns: 1fr; }
+    .stage-actions { grid-template-columns: 1fr; }
+    .seg button { min-width: 0; flex: 1 1 30%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .001ms !important; }
+    .reveal { opacity: 1 !important; transform: none !important; }
   }
 </style>
 </head>
 <body>
+
+<div class="ambient" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div id="specks"></div>
+</div>
+
 <div class="shell">
 
   <header>
-    <div class="mark">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1" />
+    <a class="back reveal d1" href="https://msubham06.github.io/Free-Toolkit/">
+      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <path d="M21 2.5 6.5 18.75h7.1L11 29.5 25.5 13.25h-7.1z"/>
       </svg>
-    </div>
-    <div>
-      <h1>QR Forge</h1>
-      <p class="tag">
-        Turn any link or text into a QR code. Choose plain black and white, pick your own colours,
-        or go custom with gradients, presets, and a logo in the middle. Download as PNG or SVG.
-      </p>
-      <span class="privacy">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-          <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
-          <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
-        </svg>
-        Runs entirely in your browser
-      </span>
-    </div>
+      Free Toolkit
+    </a>
+
+    <p class="eyebrow reveal d2">Generator &middot; one HTML file</p>
+    <h1 class="display reveal d3">QR <span class="forge">Forge</span></h1>
+    <p class="tag reveal d4">
+      Turn any link or text into a QR code. Start plain, or switch to Custom for gradients, module
+      shapes, styled eyes and a transparent logo. <strong>Export as PNG or SVG.</strong>
+    </p>
+    <p class="local-note reveal d4"><span class="led" aria-hidden="true"></span> Nothing is uploaded — this all runs on your device.</p>
   </header>
 
-  <div class="layout">
+  <div class="modes reveal d5" id="modes">
+    <button class="mode on" data-mode="basic">
+      <b>Basic</b>
+      <span>Paste a link &middot; get a QR</span>
+    </button>
+    <button class="mode" data-mode="custom">
+      <b>Custom</b>
+      <span>Colours &middot; shapes &middot; logo</span>
+    </button>
+  </div>
 
-    <div>
-      <div class="card">
-        <p class="card-title">Content</p>
-        <label class="field" for="content">Link or text</label>
-        <textarea id="content" placeholder="https://example.com" spellcheck="false"></textarea>
+  <div class="workspace reveal d5">
+
+    <!-- ── preview ── -->
+    <div class="stage">
+      <div class="canvas-wrap">
+        <canvas id="preview" width="600" height="600"></canvas>
       </div>
 
-      <div class="card">
-        <p class="card-title">Style</p>
-        <div class="tabs" id="tabs">
-          <button data-mode="simple" class="on">Simple</button>
-          <button data-mode="colour">Colour</button>
-          <button data-mode="custom">Custom</button>
-        </div>
+      <div class="stage-meta">
+        <span class="chip">Version <b id="mVersion">1</b></span>
+        <span class="chip">Modules <b id="mSize">21</b></span>
+        <span class="chip">EC <b id="mLevel">M</b></span>
+        <span class="chip hide" id="mScan">Scan safety</span>
+      </div>
 
-        <div id="panel-simple" style="margin-top:16px">
-          <p style="margin:0;font-size:0.8rem;color:var(--dim);line-height:1.6">
-            Classic black on white. The most reliable option, scans on any device and prints cleanly.
-          </p>
-        </div>
+      <div class="stage-actions">
+        <button class="btn primary wide" id="dlPng">Download PNG</button>
+        <button class="btn ghost" id="dlSvg">SVG</button>
+        <button class="btn ghost" id="copyBtn">Copy</button>
+      </div>
+    </div>
 
-        <div id="panel-colour" style="margin-top:16px;display:none">
+    <!-- ── controls ── -->
+    <div class="panel-stack">
+
+      <!-- content: shared by both modes -->
+      <details class="group" open>
+        <summary>Content</summary>
+        <div class="group-body">
           <div class="row">
-            <div class="col">
-              <label class="field">Code colour</label>
-              <div class="swatch-row">
-                <span class="swatch"><input type="color" id="fgA" value="#0f172a" /></span>
-                <input class="hex" id="fgAHex" value="#0F172A" maxlength="7" spellcheck="false" />
-              </div>
-            </div>
-            <div class="col">
-              <label class="field">Background</label>
-              <div class="swatch-row">
-                <span class="swatch"><input type="color" id="bgA" value="#ffffff" /></span>
-                <input class="hex" id="bgAHex" value="#FFFFFF" maxlength="7" spellcheck="false" />
-              </div>
-            </div>
+            <label for="content">Link or text</label>
+            <textarea id="content" spellcheck="false" placeholder="https://example.com">https://msubham06.github.io/Free-Toolkit/</textarea>
           </div>
+          <p class="hintline" id="lenHint">0 characters</p>
         </div>
+      </details>
 
-        <div id="panel-custom" style="margin-top:16px;display:none">
-          <div class="stack">
-            <div>
-              <label class="field">Preset combinations</label>
-              <div class="presets" id="presets"></div>
+      <!-- basic-only -->
+      <details class="group basic-only" open>
+        <summary>Output</summary>
+        <div class="group-body">
+          <div class="row">
+            <span class="lbl">Size <span class="val" id="bSizeVal">600 px</span></span>
+            <input type="range" id="bSize" min="200" max="2000" step="20" value="600" />
+          </div>
+          <label class="check">
+            <input type="checkbox" id="bTransparent" />
+            <span class="box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg></span>
+            <span>Transparent background</span>
+          </label>
+          <p class="hintline">Basic gives you a plain black-on-white code at error correction M — the most compatible combination. Switch to Custom for everything else.</p>
+        </div>
+      </details>
+
+      <!-- custom-only -->
+      <div class="custom-only hide" id="customPanels">
+
+        <details class="group" open>
+          <summary>Presets</summary>
+          <div class="group-body">
+            <div class="swatches" id="presets"></div>
+            <p class="hintline">A starting point — every value stays editable below.</p>
+          </div>
+        </details>
+
+        <details class="group" open>
+          <summary>Colour</summary>
+          <div class="group-body">
+            <div class="row">
+              <span class="lbl">Fill style</span>
+              <div class="seg" id="fillSeg">
+                <button data-v="solid" class="on">Solid</button>
+                <button data-v="linear">Linear</button>
+                <button data-v="radial">Radial</button>
+              </div>
             </div>
 
-            <div>
-              <label class="field">Fill style</label>
-              <div class="seg" id="fillSeg">
-                <button data-fill="solid" class="on">Solid</button>
-                <button data-fill="linear">Gradient</button>
-                <button data-fill="radial">Radial</button>
+            <div class="two">
+              <div class="row">
+                <label for="fg">Foreground</label>
+                <div class="colour">
+                  <input type="color" id="fg" value="#38bdf8" />
+                  <input type="text" id="fgHex" value="#38BDF8" spellcheck="false" />
+                </div>
               </div>
+              <div class="row grad-only hide">
+                <label for="fg2">Second colour</label>
+                <div class="colour">
+                  <input type="color" id="fg2" value="#7c3aed" />
+                  <input type="text" id="fg2Hex" value="#7C3AED" spellcheck="false" />
+                </div>
+              </div>
+            </div>
+
+            <div class="row grad-only hide">
+              <span class="lbl">Gradient angle <span class="val" id="angleVal">45&deg;</span></span>
+              <input type="range" id="angle" min="0" max="360" step="5" value="45" />
             </div>
 
             <div class="row">
-              <div class="col">
-                <label class="field">Code colour</label>
-                <div class="swatch-row">
-                  <span class="swatch"><input type="color" id="fgB" value="#7c3aed" /></span>
-                  <input class="hex" id="fgBHex" value="#7C3AED" maxlength="7" spellcheck="false" />
-                </div>
-              </div>
-              <div class="col" id="fg2Wrap" style="display:none">
-                <label class="field">Second colour</label>
-                <div class="swatch-row">
-                  <span class="swatch"><input type="color" id="fgB2" value="#ec4899" /></span>
-                  <input class="hex" id="fgB2Hex" value="#EC4899" maxlength="7" spellcheck="false" />
-                </div>
-              </div>
-              <div class="col">
-                <label class="field">Background</label>
-                <div class="swatch-row">
-                  <span class="swatch"><input type="color" id="bgB" value="#ffffff" /></span>
-                  <input class="hex" id="bgBHex" value="#FFFFFF" maxlength="7" spellcheck="false" />
-                </div>
+              <label for="bg">Background</label>
+              <div class="colour">
+                <input type="color" id="bg" value="#0b0d12" />
+                <input type="text" id="bgHex" value="#0B0D12" spellcheck="false" />
               </div>
             </div>
 
-            <div>
-              <label class="field">Module shape</label>
-              <div class="seg" id="shapeSeg">
-                <button data-shape="square" class="on">Square</button>
-                <button data-shape="rounded">Rounded</button>
-                <button data-shape="dot">Dots</button>
-              </div>
-            </div>
+            <label class="check">
+              <input type="checkbox" id="transparent" />
+              <span class="box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg></span>
+              <span>Transparent background</span>
+            </label>
 
-            <div>
-              <label class="field">Logo in the middle</label>
-              <div id="logoEmpty" class="drop-logo">
-                Click to upload, or drop an image here
-              </div>
-              <div id="logoSet" class="logo-set" style="display:none">
-                <img id="logoThumb" alt="" />
-                <div style="flex:1;min-width:0">
-                  <div class="range-row">
-                    <input type="range" id="logoSize" min="10" max="24" value="18" />
-                    <span class="val" id="logoSizeVal">18%</span>
-                  </div>
-                  <button class="ghost" id="logoClear" style="margin-top:6px;padding:6px 12px;font-size:0.72rem">Remove logo</button>
+            <label class="check">
+              <input type="checkbox" id="eyeCustom" />
+              <span class="box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 6.5"/></svg></span>
+              <span>Colour the eyes separately</span>
+            </label>
+
+            <div class="two eye-colour hide">
+              <div class="row">
+                <label for="eyeFrameCol">Eye frame</label>
+                <div class="colour">
+                  <input type="color" id="eyeFrameCol" value="#ffe94d" />
+                  <input type="text" id="eyeFrameColHex" value="#FFE94D" spellcheck="false" />
                 </div>
               </div>
-              <input type="file" id="logoInput" accept="image/*" />
+              <div class="row">
+                <label for="eyeBallCol">Eye centre</label>
+                <div class="colour">
+                  <input type="color" id="eyeBallCol" value="#ffe94d" />
+                  <input type="text" id="eyeBallColHex" value="#FFE94D" spellcheck="false" />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </details>
 
-      <div class="card">
-        <p class="card-title">Output</p>
-        <div class="stack">
-          <div>
-            <label class="field">Error correction</label>
-            <div class="seg" id="ecSeg">
-              <button data-ec="L">Low</button>
-              <button data-ec="M" class="on">Medium</button>
-              <button data-ec="Q">High</button>
-              <button data-ec="H">Max</button>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col">
-              <label class="field">Size</label>
-              <div class="range-row">
-                <input type="range" id="pxSize" min="256" max="2048" step="64" value="1024" />
-                <span class="val" id="pxSizeVal">1024</span>
+        <details class="group" open>
+          <summary>Shape</summary>
+          <div class="group-body">
+            <div class="row">
+              <span class="lbl">Modules</span>
+              <div class="seg" id="dotSeg">
+                <button data-v="square" class="on">Square</button>
+                <button data-v="rounded">Rounded</button>
+                <button data-v="dot">Dots</button>
+                <button data-v="diamond">Diamond</button>
               </div>
             </div>
-            <div class="col">
-              <label class="field">Quiet zone</label>
-              <div class="range-row">
-                <input type="range" id="quiet" min="0" max="8" value="4" />
-                <span class="val" id="quietVal">4</span>
+            <div class="row">
+              <span class="lbl">Eye frame</span>
+              <div class="seg" id="eyeFrameSeg">
+                <button data-v="square" class="on">Square</button>
+                <button data-v="rounded">Rounded</button>
+                <button data-v="circle">Circle</button>
+                <button data-v="leaf">Leaf</button>
               </div>
             </div>
+            <div class="row">
+              <span class="lbl">Eye centre</span>
+              <div class="seg" id="eyeBallSeg">
+                <button data-v="square" class="on">Square</button>
+                <button data-v="rounded">Rounded</button>
+                <button data-v="circle">Circle</button>
+                <button data-v="diamond">Diamond</button>
+              </div>
+            </div>
+            <div class="row">
+              <span class="lbl">Module gap <span class="val" id="gapVal">0%</span></span>
+              <input type="range" id="gap" min="0" max="35" step="1" value="0" />
+            </div>
           </div>
-        </div>
+        </details>
+
+        <details class="group">
+          <summary>Logo</summary>
+          <div class="group-body">
+            <div id="logoEmpty" class="logo-drop">
+              <strong>Drop a logo, or click to browse</strong>
+              <span>PNG &middot; SVG &middot; JPG &mdash; transparency is kept</span>
+            </div>
+            <input type="file" id="logoInput" accept="image/*" class="hide" />
+
+            <div id="logoLoaded" class="logo-loaded hide">
+              <div class="logo-thumb"><img id="logoThumb" alt="" /></div>
+              <div class="logo-name" id="logoName">logo.png<em id="logoAlpha">transparent</em></div>
+              <button class="btn ghost" id="logoRemove" style="padding:8px 12px;font-size:.76rem">Remove</button>
+            </div>
+
+            <div id="logoOpts" class="hide" style="display:grid;gap:14px">
+              <div class="row">
+                <span class="lbl">Logo size <span class="val" id="logoSizeVal">18%</span></span>
+                <input type="range" id="logoSize" min="8" max="34" step="1" value="18" />
+              </div>
+              <div class="row">
+                <span class="lbl">Clear space around logo <span class="val" id="logoPadVal">14%</span></span>
+                <input type="range" id="logoPad" min="4" max="40" step="1" value="14" />
+              </div>
+              <div class="row">
+                <span class="lbl">Backing plate</span>
+                <div class="seg" id="plateSeg">
+                  <button data-v="none" class="on">None</button>
+                  <button data-v="square">Rounded</button>
+                  <button data-v="circle">Circle</button>
+                </div>
+              </div>
+              <p class="hintline">
+                A transparent PNG stays transparent — the code behind it is cleared, not painted over.
+                Adding a logo switches error correction to H automatically, and the Scan safety chip
+                above the preview tells you live whether the code can still be read.
+              </p>
+            </div>
+          </div>
+        </details>
+
+        <details class="group">
+          <summary>Output</summary>
+          <div class="group-body">
+            <div class="row">
+              <span class="lbl">Export size <span class="val" id="sizeVal">600 px</span></span>
+              <input type="range" id="size" min="200" max="2000" step="20" value="600" />
+            </div>
+            <div class="row">
+              <span class="lbl">Quiet zone <span class="val" id="quietVal">4</span></span>
+              <input type="range" id="quiet" min="0" max="10" step="1" value="4" />
+            </div>
+            <div class="row">
+              <span class="lbl">Error correction</span>
+              <div class="seg" id="ecSeg">
+                <button data-v="L">L</button>
+                <button data-v="M" class="on">M</button>
+                <button data-v="Q">Q</button>
+                <button data-v="H">H</button>
+              </div>
+            </div>
+            <p class="hintline">Higher correction survives damage and logos, but packs in more modules. Use Q or H whenever you add a logo.</p>
+            <div class="row">
+              <label for="fname">File name</label>
+              <input type="text" id="fname" value="qr-code" spellcheck="false" />
+            </div>
+          </div>
+        </details>
+
       </div>
     </div>
-
-    <div class="preview-wrap">
-      <div class="card">
-        <p class="card-title">Preview</p>
-        <div class="stage">
-          <canvas id="preview" width="300" height="300"></canvas>
-          <p class="empty-note" id="emptyNote">Type a link to see your code</p>
-        </div>
-
-        <div class="meta">
-          <span id="metaLeft">&nbsp;</span>
-          <span id="metaRight">&nbsp;</span>
-        </div>
-
-        <div id="advice" class="warn ok" style="display:none"></div>
-
-        <div class="actions">
-          <button class="primary" id="dlPng" disabled>DOWNLOAD PNG</button>
-          <button class="ghost" id="dlSvg" disabled>SVG</button>
-        </div>
-      </div>
-    </div>
-
   </div>
 
   <footer>
-    QR Forge &middot; a single HTML file, works offline, nothing leaves your machine.
-    Test your code with a real phone before printing it anywhere permanent.
+    <span>QR Forge &middot; one HTML file &middot; works offline</span>
+    <span class="spacer"></span>
+    <span>Built with <span class="heart">&#9829;</span> by <a href="https://github.com/MSubham06" target="_blank" rel="noopener noreferrer">Subham</a></span>
   </footer>
 
 </div>
@@ -916,214 +1147,655 @@
   global.QREncoder = { generate: generate };
 })(typeof window !== 'undefined' ? window : this);
 
+
+</script>
+
+<script>
 (function () {
   'use strict';
 
+  var $ = function (id) { return document.getElementById(id); };
+
   var PRESETS = [
-    { name: 'Midnight', fg: '#0f172a', fg2: '#334155', bg: '#ffffff', fill: 'linear' },
-    { name: 'Sunset',   fg: '#f97316', fg2: '#db2777', bg: '#fff7ed', fill: 'linear' },
-    { name: 'Ocean',    fg: '#0369a1', fg2: '#06b6d4', bg: '#f0f9ff', fill: 'linear' },
-    { name: 'Forest',   fg: '#14532d', fg2: '#65a30d', bg: '#f7fee7', fill: 'linear' },
-    { name: 'Grape',    fg: '#6d28d9', fg2: '#c026d3', bg: '#faf5ff', fill: 'radial' },
-    { name: 'Ember',    fg: '#7f1d1d', fg2: '#f59e0b', bg: '#fffbeb', fill: 'linear' },
-    { name: 'Mono',     fg: '#111827', fg2: '#111827', bg: '#f3f4f6', fill: 'solid' },
-    { name: 'Inverted', fg: '#ffffff', fg2: '#e2e8f0', bg: '#0f172a', fill: 'solid' }
+    { name: 'Sky',     fill: 'linear', fg: '#38bdf8', fg2: '#0284c7', bg: '#0b0d12', angle: 45, dot: 'rounded', ef: 'rounded', eb: 'circle' },
+    { name: 'Volt',    fill: 'solid',  fg: '#ffe94d', fg2: '#d4bc1f', bg: '#0b0d12', angle: 45, dot: 'square',  ef: 'square',  eb: 'square' },
+    { name: 'Violet',  fill: 'linear', fg: '#a78bfa', fg2: '#7c3aed', bg: '#0b0d12', angle: 120, dot: 'dot',    ef: 'circle',  eb: 'circle' },
+    { name: 'Mono',    fill: 'solid',  fg: '#000000', fg2: '#000000', bg: '#ffffff', angle: 0,  dot: 'square',  ef: 'square',  eb: 'square' },
+    { name: 'Sunset',  fill: 'linear', fg: '#fb923c', fg2: '#e11d48', bg: '#1a0f14', angle: 90, dot: 'rounded', ef: 'leaf',    eb: 'rounded' },
+    { name: 'Forest',  fill: 'radial', fg: '#34d399', fg2: '#065f46', bg: '#08120e', angle: 0,  dot: 'dot',     ef: 'rounded', eb: 'circle' },
+    { name: 'Ink',     fill: 'solid',  fg: '#e8ecf3', fg2: '#e8ecf3', bg: '#0b0d12', angle: 0,  dot: 'square',  ef: 'square',  eb: 'square' },
+    { name: 'Candy',   fill: 'linear', fg: '#f472b6', fg2: '#38bdf8', bg: '#12101a', angle: 30, dot: 'diamond', ef: 'circle',  eb: 'diamond' }
   ];
 
   var state = {
-    text: '',
-    mode: 'simple',
-    ec: 'M',
-    px: 1024,
-    quiet: 4,
-    fill: 'solid',
-    shape: 'square',
-    colour: { fg: '#0F172A', bg: '#FFFFFF' },
-    custom: { fg: '#7C3AED', fg2: '#EC4899', bg: '#FFFFFF' },
-    logo: null,
-    logoPct: 18
+    mode: 'basic',
+    content: 'https://msubham06.github.io/Free-Toolkit/',
+    // basic
+    bSize: 600,
+    bTransparent: false,
+    // custom
+    fill: 'solid', fg: '#38bdf8', fg2: '#7c3aed', angle: 45,
+    bg: '#0b0d12', transparent: false,
+    eyeCustom: false, eyeFrameCol: '#ffe94d', eyeBallCol: '#ffe94d',
+    dot: 'square', eyeFrame: 'square', eyeBall: 'square', gap: 0,
+    size: 600, quiet: 4, ec: 'M', fname: 'qr-code',
+    logo: null, logoName: '', logoDataUrl: '', logoHasAlpha: false,
+    logoSize: 18, logoPad: 14, plate: 'none'
   };
 
-  var el = {};
-  ['content','tabs','panel-simple','panel-colour','panel-custom','presets','fillSeg','shapeSeg',
-   'ecSeg','pxSize','pxSizeVal','quiet','quietVal','preview','emptyNote','metaLeft','metaRight',
-   'advice','dlPng','dlSvg','fg2Wrap','logoEmpty','logoSet','logoThumb','logoInput','logoClear',
-   'logoSize','logoSizeVal'].forEach(function (id) {
-    el[id] = document.getElementById(id);
-  });
+  var canvas = $('preview');
+  var ctx = canvas.getContext('2d');
 
-  var colourPairs = [
-    ['fgA', 'fgAHex', function (v) { state.colour.fg = v; }],
-    ['bgA', 'bgAHex', function (v) { state.colour.bg = v; }],
-    ['fgB', 'fgBHex', function (v) { state.custom.fg = v; }],
-    ['fgB2', 'fgB2Hex', function (v) { state.custom.fg2 = v; }],
-    ['bgB', 'bgBHex', function (v) { state.custom.bg = v; }]
-  ];
-
+  /* ── helpers ─────────────────────────────────────────── */
   function normHex(v) {
     v = String(v).trim();
     if (v[0] !== '#') v = '#' + v;
-    if (/^#[0-9a-fA-F]{3}$/.test(v)) {
+    if (/^#[0-9a-f]{3}$/i.test(v)) {
       v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
     }
-    return /^#[0-9a-fA-F]{6}$/.test(v) ? v.toUpperCase() : null;
+    return /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null;
   }
 
-  colourPairs.forEach(function (p) {
-    var picker = document.getElementById(p[0]);
-    var hex = document.getElementById(p[1]);
+  function roundRect(c, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.arcTo(x + w, y, x + w, y + r, r);
+    c.lineTo(x + w, y + h - r);
+    c.arcTo(x + w, y + h, x + w - r, y + h, r);
+    c.lineTo(x + r, y + h);
+    c.arcTo(x, y + h, x, y + h - r, r);
+    c.lineTo(x, y + r);
+    c.arcTo(x, y, x + r, y, r);
+    c.closePath();
+  }
+
+  function makePaint(c, px, o) {
+    if (o.fill === 'linear') {
+      var a = (o.angle % 360) * Math.PI / 180;
+      var cx = px / 2, cy = px / 2;
+      var dx = Math.cos(a) * px / 2, dy = Math.sin(a) * px / 2;
+      var g = c.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
+      g.addColorStop(0, o.fg); g.addColorStop(1, o.fg2);
+      return g;
+    }
+    if (o.fill === 'radial') {
+      var r = c.createRadialGradient(px / 2, px / 2, px * 0.04, px / 2, px / 2, px * 0.62);
+      r.addColorStop(0, o.fg); r.addColorStop(1, o.fg2);
+      return r;
+    }
+    return o.fg;
+  }
+
+  function isFinder(r, c, n) {
+    return (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+  }
+
+  function drawModule(c, shape, x, y, s) {
+    if (shape === 'dot') {
+      c.beginPath();
+      c.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2);
+      c.fill();
+    } else if (shape === 'rounded') {
+      roundRect(c, x, y, s, s, s * 0.32);
+      c.fill();
+    } else if (shape === 'diamond') {
+      c.beginPath();
+      c.moveTo(x + s / 2, y);
+      c.lineTo(x + s, y + s / 2);
+      c.lineTo(x + s / 2, y + s);
+      c.lineTo(x, y + s / 2);
+      c.closePath();
+      c.fill();
+    } else {
+      c.fillRect(x, y, s, s);
+    }
+  }
+
+  function drawEye(c, style, x, y, size, unit) {
+    // outer ring: 7x7 with a 5x5 hole
+    var lw = unit;
+    if (style === 'circle') {
+      c.beginPath();
+      c.arc(x + size / 2, y + size / 2, size / 2 - lw / 2, 0, Math.PI * 2);
+      c.lineWidth = lw; c.stroke();
+      return;
+    }
+    var r = 0;
+    if (style === 'rounded') r = size * 0.26;
+    if (style === 'leaf') r = size * 0.42;
+
+    c.beginPath();
+    if (style === 'leaf') {
+      // two opposite corners rounded
+      var i = x + lw / 2, j = y + lw / 2, w = size - lw;
+      c.moveTo(i + r, j);
+      c.lineTo(i + w, j);
+      c.lineTo(i + w, j + w - r);
+      c.arcTo(i + w, j + w, i + w - r, j + w, r);
+      c.lineTo(i, j + w);
+      c.lineTo(i, j + r);
+      c.arcTo(i, j, i + r, j, r);
+      c.closePath();
+    } else {
+      roundRect(c, x + lw / 2, y + lw / 2, size - lw, size - lw, r);
+    }
+    c.lineWidth = lw; c.stroke();
+  }
+
+  function drawEyeBall(c, style, x, y, s) {
+    if (style === 'circle') {
+      c.beginPath();
+      c.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2);
+      c.fill();
+    } else if (style === 'rounded') {
+      roundRect(c, x, y, s, s, s * 0.3); c.fill();
+    } else if (style === 'diamond') {
+      c.beginPath();
+      c.moveTo(x + s / 2, y); c.lineTo(x + s, y + s / 2);
+      c.lineTo(x + s / 2, y + s); c.lineTo(x, y + s / 2);
+      c.closePath(); c.fill();
+    } else {
+      c.fillRect(x, y, s, s);
+    }
+  }
+
+  /* ── render ──────────────────────────────────────────── */
+  var lastInfo = { version: 1, size: 21, level: 'M' };
+  var lastErased = 0;
+  var EC_BUDGET = { L: 0.07, M: 0.15, Q: 0.25, H: 0.30 };
+
+  function currentOpts() {
+    if (state.mode === 'basic') {
+      return {
+        fill: 'solid', fg: '#000000', fg2: '#000000', angle: 0,
+        bg: '#ffffff', transparent: state.bTransparent,
+        eyeCustom: false, dot: 'square', eyeFrame: 'square', eyeBall: 'square',
+        gap: 0, quiet: 4, ec: 'M', size: state.bSize,
+        logo: null, logoSize: 0, logoPad: 0, plate: 'none'
+      };
+    }
+    return {
+      fill: state.fill, fg: state.fg, fg2: state.fg2, angle: state.angle,
+      bg: state.bg, transparent: state.transparent,
+      eyeCustom: state.eyeCustom, eyeFrameCol: state.eyeFrameCol, eyeBallCol: state.eyeBallCol,
+      dot: state.dot, eyeFrame: state.eyeFrame, eyeBall: state.eyeBall,
+      gap: state.gap, quiet: state.quiet, ec: state.ec, size: state.size,
+      logo: state.logo, logoSize: state.logoSize, logoPad: state.logoPad, plate: state.plate
+    };
+  }
+
+  function paintTo(target, px, o) {
+    var text = state.content || ' ';
+    var qr;
+    try {
+      qr = window.QREncoder.generate(text, { level: o.ec });
+    } catch (err) {
+      return null;
+    }
+
+    var m = qr.matrix, n = qr.size;
+    var total = n + o.quiet * 2;
+    var unit = px / total;
+    var off = o.quiet * unit;
+
+    var c = target.getContext('2d');
+    target.width = px; target.height = px;
+    c.clearRect(0, 0, px, px);
+
+    if (!o.transparent) {
+      c.fillStyle = o.bg;
+      c.fillRect(0, 0, px, px);
+    }
+
+    var paint = makePaint(c, px, o);
+    var inset = (o.gap / 100) * unit / 2;
+    var s = unit - inset * 2;
+
+    // Logo geometry is measured against the SYMBOL, not the whole canvas —
+    // otherwise the quiet zone silently inflates the logo over the data.
+    var symbol = n * unit;
+    var clear = null;
+    if (o.logo && o.logoSize > 0) {
+      var lw = (o.logoSize / 100) * symbol;
+      var pad = (o.logoPad / 100) * lw;
+      var box = lw + pad * 2;
+      clear = { x: (px - box) / 2, y: (px - box) / 2, w: box, h: box, logo: lw };
+    }
+
+    function blocked(cx, cy) {
+      if (!clear) return false;
+      return cx > clear.x && cx < clear.x + clear.w && cy > clear.y && cy < clear.y + clear.h;
+    }
+
+    // modules
+    var erased = 0;
+    c.fillStyle = paint;
+    for (var r = 0; r < n; r++) {
+      for (var col = 0; col < n; col++) {
+        var x = off + col * unit, y = off + r * unit;
+        var hit = blocked(x + unit / 2, y + unit / 2);
+        if (hit && !isFinder(r, col, n)) erased++;
+        if (!m[r][col]) continue;
+        if (isFinder(r, col, n)) continue;
+        if (hit) continue;
+        drawModule(c, o.dot, x + inset, y + inset, s);
+      }
+    }
+    lastErased = erased;
+
+    // eyes
+    var corners = [[0, 0], [0, n - 7], [n - 7, 0]];
+    for (var i = 0; i < corners.length; i++) {
+      var er = corners[i][0], ec = corners[i][1];
+      var ex = off + ec * unit, ey = off + er * unit;
+
+      c.fillStyle = o.eyeCustom ? o.eyeFrameCol : paint;
+      c.strokeStyle = o.eyeCustom ? o.eyeFrameCol : paint;
+      drawEye(c, o.eyeFrame, ex, ey, unit * 7, unit);
+
+      c.fillStyle = o.eyeCustom ? o.eyeBallCol : paint;
+      drawEyeBall(c, o.eyeBall, ex + unit * 2, ey + unit * 2, unit * 3);
+    }
+
+    // logo
+    if (o.logo && clear) {
+      var size = clear.logo;
+      if (o.plate !== 'none') {
+        c.fillStyle = o.transparent ? '#ffffff' : o.bg;
+        if (o.plate === 'circle') {
+          c.beginPath();
+          c.arc(px / 2, px / 2, clear.w / 2, 0, Math.PI * 2);
+          c.fill();
+        } else {
+          roundRect(c, clear.x, clear.y, clear.w, clear.h, clear.w * 0.18);
+          c.fill();
+        }
+      }
+
+      // preserve the logo's own aspect ratio inside the square
+      var iw = o.logo.naturalWidth || o.logo.width;
+      var ih = o.logo.naturalHeight || o.logo.height;
+      var scale = Math.min(size / iw, size / ih);
+      var dw = iw * scale, dh = ih * scale;
+      c.drawImage(o.logo, px / 2 - dw / 2, px / 2 - dh / 2, dw, dh);
+    }
+
+    return qr;
+  }
+
+  function render() {
+    var o = currentOpts();
+    var px = Math.min(1000, o.size);   // preview is capped; export uses the full size
+    var qr = paintTo(canvas, px, o);
+    if (!qr) return;
+
+    lastInfo = { version: qr.version, size: qr.size, level: qr.level };
+    $('mVersion').textContent = qr.version;
+    $('mSize').textContent = qr.size + '\u00D7' + qr.size;
+    $('mLevel').textContent = qr.level;
+
+    // live scan-safety estimate: how much of the symbol the logo destroys,
+    // measured against what this error-correction level can actually recover
+    var scan = $('mScan');
+    if (state.mode === 'custom' && state.logo) {
+      var lost = lastErased / (qr.size * qr.size);
+      var budget = EC_BUDGET[o.ec] || 0.15;
+      var used = lost / budget;
+      scan.className = 'chip';
+      if (used < 0.55) {
+        scan.classList.add('ok');
+        scan.textContent = 'Scan safety: good';
+      } else if (used < 0.85) {
+        scan.classList.add('tight');
+        scan.textContent = 'Scan safety: tight';
+      } else {
+        scan.classList.add('warn');
+        scan.textContent = 'Scan safety: too big — shrink the logo or raise EC';
+      }
+      scan.title = Math.round(lost * 100) + '% of the code is covered; level ' +
+                   o.ec + ' can recover about ' + Math.round(budget * 100) + '%';
+    } else {
+      scan.className = 'chip hide';
+    }
+
+    var len = (state.content || '').length;
+    $('lenHint').textContent = len + ' character' + (len === 1 ? '' : 's');
+  }
+
+  /* ── export ──────────────────────────────────────────── */
+  function exportCanvas() {
+    var o = currentOpts();
+    var out = document.createElement('canvas');
+    paintTo(out, o.size, o);
+    return out;
+  }
+
+  function fileName(ext) {
+    var base = (state.mode === 'custom' ? state.fname : 'qr-code').trim() || 'qr-code';
+    return base.replace(/[\\/:*?"<>|]+/g, '-') + '.' + ext;
+  }
+
+  function saveBlob(blob, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+
+  function flash(btn, text) {
+    var original = btn.textContent;
+    btn.textContent = text;
+    btn.classList.add('ok');
+    setTimeout(function () { btn.textContent = original; btn.classList.remove('ok'); }, 1600);
+  }
+
+  $('dlPng').addEventListener('click', function () {
+    var btn = this;
+    exportCanvas().toBlob(function (b) {
+      if (b) { saveBlob(b, fileName('png')); flash(btn, 'Saved'); }
+    }, 'image/png');
+  });
+
+  $('copyBtn').addEventListener('click', function () {
+    var btn = this;
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      flash(btn, 'No support');
+      return;
+    }
+    exportCanvas().toBlob(function (b) {
+      if (!b) return;
+      var item = {};
+      item['image/png'] = b;
+      navigator.clipboard.write([new ClipboardItem(item)])
+        .then(function () { flash(btn, 'Copied'); })
+        .catch(function () { flash(btn, 'Blocked'); });
+    }, 'image/png');
+  });
+
+  /* SVG export — rebuilt from the matrix so it stays sharp at any size */
+  function buildSvg() {
+    var o = currentOpts();
+    var qr = window.QREncoder.generate(state.content || ' ', { level: o.ec });
+    var m = qr.matrix, n = qr.size;
+    var total = n + o.quiet * 2;
+    var px = o.size;
+    var unit = px / total;
+    var off = o.quiet * unit;
+    var inset = (o.gap / 100) * unit / 2;
+    var s = unit - inset * 2;
+    var f = function (v) { return Math.round(v * 100) / 100; };
+
+    var defs = '';
+    var fillRef = o.fg;
+    if (o.fill === 'linear') {
+      var a = (o.angle % 360) * Math.PI / 180;
+      var dx = Math.cos(a) / 2, dy = Math.sin(a) / 2;
+      defs = '<linearGradient id="g" x1="' + f(0.5 - dx) + '" y1="' + f(0.5 - dy) +
+             '" x2="' + f(0.5 + dx) + '" y2="' + f(0.5 + dy) + '">' +
+             '<stop offset="0" stop-color="' + o.fg + '"/><stop offset="1" stop-color="' + o.fg2 + '"/></linearGradient>';
+      fillRef = 'url(#g)';
+    } else if (o.fill === 'radial') {
+      defs = '<radialGradient id="g"><stop offset="0" stop-color="' + o.fg +
+             '"/><stop offset="1" stop-color="' + o.fg2 + '"/></radialGradient>';
+      fillRef = 'url(#g)';
+    }
+
+    var symbol = n * unit;
+    var clear = null;
+    if (o.logo && o.logoSize > 0) {
+      var lw = (o.logoSize / 100) * symbol;
+      var pad = (o.logoPad / 100) * lw;
+      var box = lw + pad * 2;
+      clear = { x: (px - box) / 2, y: (px - box) / 2, w: box, h: box, logo: lw };
+    }
+
+    var body = '';
+    for (var r = 0; r < n; r++) {
+      for (var col = 0; col < n; col++) {
+        if (!m[r][col] || isFinder(r, col, n)) continue;
+        var x = off + col * unit, y = off + r * unit;
+        var cx = x + unit / 2, cy = y + unit / 2;
+        if (clear && cx > clear.x && cx < clear.x + clear.w && cy > clear.y && cy < clear.y + clear.h) continue;
+        if (o.dot === 'dot') {
+          body += '<circle cx="' + f(cx) + '" cy="' + f(cy) + '" r="' + f(s / 2) + '"/>';
+        } else if (o.dot === 'diamond') {
+          body += '<polygon points="' + f(cx) + ',' + f(y + inset) + ' ' + f(x + inset + s) + ',' + f(cy) +
+                  ' ' + f(cx) + ',' + f(y + inset + s) + ' ' + f(x + inset) + ',' + f(cy) + '"/>';
+        } else {
+          var rx = o.dot === 'rounded' ? ' rx="' + f(s * 0.32) + '"' : '';
+          body += '<rect x="' + f(x + inset) + '" y="' + f(y + inset) + '" width="' + f(s) + '" height="' + f(s) + '"' + rx + '/>';
+        }
+      }
+    }
+
+    var eyes = '';
+    var corners = [[0, 0], [0, n - 7], [n - 7, 0]];
+    for (var i = 0; i < corners.length; i++) {
+      var ex = off + corners[i][1] * unit, ey = off + corners[i][0] * unit;
+      var outer = unit * 7;
+      var frameFill = o.eyeCustom ? o.eyeFrameCol : fillRef;
+      var ballFill = o.eyeCustom ? o.eyeBallCol : fillRef;
+
+      if (o.eyeFrame === 'circle') {
+        eyes += '<circle cx="' + f(ex + outer / 2) + '" cy="' + f(ey + outer / 2) + '" r="' + f(outer / 2 - unit / 2) +
+                '" fill="none" stroke="' + frameFill + '" stroke-width="' + f(unit) + '"/>';
+      } else {
+        var er = o.eyeFrame === 'rounded' ? unit * 1.8 : (o.eyeFrame === 'leaf' ? unit * 2.9 : 0);
+        eyes += '<rect x="' + f(ex + unit / 2) + '" y="' + f(ey + unit / 2) + '" width="' + f(outer - unit) +
+                '" height="' + f(outer - unit) + '" rx="' + f(er) + '" fill="none" stroke="' + frameFill +
+                '" stroke-width="' + f(unit) + '"/>';
+      }
+
+      var bx = ex + unit * 2, by = ey + unit * 2, bs = unit * 3;
+      if (o.eyeBall === 'circle') {
+        eyes += '<circle cx="' + f(bx + bs / 2) + '" cy="' + f(by + bs / 2) + '" r="' + f(bs / 2) + '" fill="' + ballFill + '"/>';
+      } else if (o.eyeBall === 'diamond') {
+        eyes += '<polygon points="' + f(bx + bs / 2) + ',' + f(by) + ' ' + f(bx + bs) + ',' + f(by + bs / 2) +
+                ' ' + f(bx + bs / 2) + ',' + f(by + bs) + ' ' + f(bx) + ',' + f(by + bs / 2) + '" fill="' + ballFill + '"/>';
+      } else {
+        var brx = o.eyeBall === 'rounded' ? ' rx="' + f(bs * 0.3) + '"' : '';
+        eyes += '<rect x="' + f(bx) + '" y="' + f(by) + '" width="' + f(bs) + '" height="' + f(bs) + '"' + brx +
+                ' fill="' + ballFill + '"/>';
+      }
+    }
+
+    var logo = '';
+    if (o.logo && state.logoDataUrl && clear) {
+      var lsize = clear.logo;
+      var iw = o.logo.naturalWidth || o.logo.width;
+      var ih = o.logo.naturalHeight || o.logo.height;
+      var sc = Math.min(lsize / iw, lsize / ih);
+      var dw = iw * sc, dh = ih * sc;
+      if (o.plate !== 'none') {
+        var plateCol = o.transparent ? '#ffffff' : o.bg;
+        logo += o.plate === 'circle'
+          ? '<circle cx="' + f(px / 2) + '" cy="' + f(px / 2) + '" r="' + f(clear.w / 2) + '" fill="' + plateCol + '"/>'
+          : '<rect x="' + f(clear.x) + '" y="' + f(clear.y) + '" width="' + f(clear.w) + '" height="' + f(clear.h) +
+            '" rx="' + f(clear.w * 0.18) + '" fill="' + plateCol + '"/>';
+      }
+      logo += '<image href="' + state.logoDataUrl + '" x="' + f(px / 2 - dw / 2) + '" y="' + f(px / 2 - dh / 2) +
+              '" width="' + f(dw) + '" height="' + f(dh) + '"/>';
+    }
+
+    var background = o.transparent ? '' : '<rect width="' + px + '" height="' + px + '" fill="' + o.bg + '"/>';
+
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + px + '" height="' + px +
+           '" viewBox="0 0 ' + px + ' ' + px + '">' +
+           (defs ? '<defs>' + defs + '</defs>' : '') +
+           background +
+           '<g fill="' + fillRef + '">' + body + '</g>' +
+           eyes + logo + '</svg>';
+  }
+
+  $('dlSvg').addEventListener('click', function () {
+    var btn = this;
+    try {
+      var blob = new Blob([buildSvg()], { type: 'image/svg+xml;charset=utf-8' });
+      saveBlob(blob, fileName('svg'));
+      flash(btn, 'Saved');
+    } catch (err) {
+      flash(btn, 'Failed');
+    }
+  });
+
+  /* ── mode switch ─────────────────────────────────────── */
+  var modes = $('modes');
+  modes.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    state.mode = btn.dataset.mode;
+    Array.prototype.forEach.call(modes.children, function (b) {
+      b.classList.toggle('on', b === btn);
+    });
+    var custom = state.mode === 'custom';
+    document.querySelectorAll('.custom-only').forEach(function (el) { el.classList.toggle('hide', !custom); });
+    document.querySelectorAll('.basic-only').forEach(function (el) { el.classList.toggle('hide', custom); });
+    render();
+  });
+
+  /* ── bindings ────────────────────────────────────────── */
+  function segment(id, key, after) {
+    var box = $(id);
+    if (!box) return;
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-v]');
+      if (!b) return;
+      state[key] = b.dataset.v;
+      Array.prototype.forEach.call(box.children, function (x) { x.classList.toggle('on', x === b); });
+      if (after) after();
+      render();
+    });
+  }
+
+  function slider(id, key, valId, suffix, transform) {
+    var input = $(id);
+    if (!input) return;
+    var out = valId ? $(valId) : null;
+    var sync = function () {
+      var v = parseFloat(input.value);
+      state[key] = v;
+      if (out) out.textContent = (transform ? transform(v) : v) + (suffix || '');
+      render();
+    };
+    input.addEventListener('input', sync);
+    sync();
+  }
+
+  function colourPair(pickerId, hexId, key) {
+    var picker = $(pickerId), hex = $(hexId);
+    if (!picker) return;
     picker.addEventListener('input', function () {
+      state[key] = picker.value;
       hex.value = picker.value.toUpperCase();
-      p[2](picker.value.toUpperCase());
       render();
     });
     hex.addEventListener('input', function () {
       var v = normHex(hex.value);
-      if (!v) return;
-      picker.value = v;
-      p[2](v);
-      render();
+      if (v) { state[key] = v; picker.value = v; render(); }
     });
-    hex.addEventListener('blur', function () {
-      hex.value = picker.value.toUpperCase();
-    });
-  });
-
-  PRESETS.forEach(function (p) {
-    var b = document.createElement('button');
-    b.className = 'preset';
-    b.title = p.name;
-    var grad = p.fill === 'solid'
-      ? '<rect width="40" height="40" fill="' + p.fg + '"/>'
-      : '<defs><linearGradient id="pg' + p.name + '" x1="0" y1="0" x2="1" y2="1">' +
-        '<stop offset="0" stop-color="' + p.fg + '"/><stop offset="1" stop-color="' + p.fg2 + '"/>' +
-        '</linearGradient></defs><rect width="40" height="40" fill="url(#pg' + p.name + ')"/>';
-    b.innerHTML =
-      '<span class="chip"><svg viewBox="0 0 40 40" preserveAspectRatio="none">' +
-      '<rect width="40" height="40" fill="' + p.bg + '"/>' + grad +
-      '<rect x="4" y="4" width="10" height="10" fill="' + p.bg + '"/>' +
-      '<rect x="26" y="26" width="10" height="10" fill="' + p.bg + '"/>' +
-      '</svg></span><span class="nm">' + p.name + '</span>';
-    b.addEventListener('click', function () {
-      state.custom.fg = p.fg.toUpperCase();
-      state.custom.fg2 = p.fg2.toUpperCase();
-      state.custom.bg = p.bg.toUpperCase();
-      state.fill = p.fill;
-      syncCustomInputs();
-      render();
-    });
-    el.presets.appendChild(b);
-  });
-
-  function syncCustomInputs() {
-    document.getElementById('fgB').value = state.custom.fg;
-    document.getElementById('fgBHex').value = state.custom.fg;
-    document.getElementById('fgB2').value = state.custom.fg2;
-    document.getElementById('fgB2Hex').value = state.custom.fg2;
-    document.getElementById('bgB').value = state.custom.bg;
-    document.getElementById('bgBHex').value = state.custom.bg;
-    setSeg(el.fillSeg, 'fill', state.fill);
-    el.fg2Wrap.style.display = state.fill === 'solid' ? 'none' : '';
+    hex.addEventListener('blur', function () { hex.value = state[key].toUpperCase(); });
   }
 
-  function setSeg(container, attr, value) {
-    Array.prototype.forEach.call(container.children, function (b) {
-      b.classList.toggle('on', b.getAttribute('data-' + attr) === value);
+  function toggle(id, key, after) {
+    var input = $(id);
+    if (!input) return;
+    input.addEventListener('change', function () {
+      state[key] = input.checked;
+      if (after) after();
+      render();
     });
   }
 
-  el.tabs.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    state.mode = b.getAttribute('data-mode');
-    Array.prototype.forEach.call(el.tabs.children, function (x) {
-      x.classList.toggle('on', x === b);
+  // content, shared by both modes
+  var content = $('content');
+  content.value = state.content;
+  content.addEventListener('input', function () {
+    state.content = content.value;
+    render();
+  });
+
+  // basic
+  slider('bSize', 'bSize', 'bSizeVal', ' px');
+  toggle('bTransparent', 'bTransparent');
+
+  // custom — colour
+  segment('fillSeg', 'fill', function () {
+    var grad = state.fill !== 'solid';
+    document.querySelectorAll('.grad-only').forEach(function (el) { el.classList.toggle('hide', !grad); });
+  });
+  colourPair('fg', 'fgHex', 'fg');
+  colourPair('fg2', 'fg2Hex', 'fg2');
+  colourPair('bg', 'bgHex', 'bg');
+  colourPair('eyeFrameCol', 'eyeFrameColHex', 'eyeFrameCol');
+  colourPair('eyeBallCol', 'eyeBallColHex', 'eyeBallCol');
+  slider('angle', 'angle', 'angleVal', '\u00B0');
+  toggle('transparent', 'transparent');
+  toggle('eyeCustom', 'eyeCustom', function () {
+    document.querySelectorAll('.eye-colour').forEach(function (el) {
+      el.classList.toggle('hide', !state.eyeCustom);
     });
-    el['panel-simple'].style.display = state.mode === 'simple' ? '' : 'none';
-    el['panel-colour'].style.display = state.mode === 'colour' ? '' : 'none';
-    el['panel-custom'].style.display = state.mode === 'custom' ? '' : 'none';
-    render();
   });
 
-  el.fillSeg.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    state.fill = b.getAttribute('data-fill');
-    setSeg(el.fillSeg, 'fill', state.fill);
-    el.fg2Wrap.style.display = state.fill === 'solid' ? 'none' : '';
-    render();
-  });
+  // custom — shape
+  segment('dotSeg', 'dot');
+  segment('eyeFrameSeg', 'eyeFrame');
+  segment('eyeBallSeg', 'eyeBall');
+  slider('gap', 'gap', 'gapVal', '%');
 
-  el.shapeSeg.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    state.shape = b.getAttribute('data-shape');
-    setSeg(el.shapeSeg, 'shape', state.shape);
-    render();
-  });
+  // custom — output
+  slider('size', 'size', 'sizeVal', ' px');
+  slider('quiet', 'quiet', 'quietVal', '');
+  segment('ecSeg', 'ec');
+  $('fname').addEventListener('input', function () { state.fname = this.value; });
 
-  el.ecSeg.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    state.ec = b.getAttribute('data-ec');
-    setSeg(el.ecSeg, 'ec', state.ec);
-    render();
-  });
+  /* ── logo ────────────────────────────────────────────── */
+  var logoEmpty = $('logoEmpty'), logoInput = $('logoInput');
 
-  el.content.addEventListener('input', function () {
-    state.text = el.content.value;
-    render();
-  });
-
-  el.pxSize.addEventListener('input', function () {
-    state.px = parseInt(el.pxSize.value, 10);
-    el.pxSizeVal.textContent = state.px;
-  });
-
-  el.quiet.addEventListener('input', function () {
-    state.quiet = parseInt(el.quiet.value, 10);
-    el.quietVal.textContent = state.quiet;
-    render();
-  });
-
-  el.logoSize.addEventListener('input', function () {
-    state.logoPct = parseInt(el.logoSize.value, 10);
-    el.logoSizeVal.textContent = state.logoPct + '%';
-    render();
-  });
-
-  el.logoEmpty.addEventListener('click', function () { el.logoInput.click(); });
-  ['dragenter','dragover'].forEach(function (ev) {
-    el.logoEmpty.addEventListener(ev, function (e) { e.preventDefault(); });
-  });
-  el.logoEmpty.addEventListener('drop', function (e) {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadLogo(e.dataTransfer.files[0]);
-  });
-  el.logoInput.addEventListener('change', function (e) {
-    if (e.target.files && e.target.files[0]) loadLogo(e.target.files[0]);
-    el.logoInput.value = '';
-  });
-  el.logoClear.addEventListener('click', function () {
-    state.logo = null;
-    el.logoSet.style.display = 'none';
-    el.logoEmpty.style.display = '';
-    render();
-  });
+  function hasAlpha(img) {
+    try {
+      var c = document.createElement('canvas');
+      var w = c.width = Math.min(64, img.naturalWidth || 64);
+      var h = c.height = Math.min(64, img.naturalHeight || 64);
+      var x = c.getContext('2d');
+      x.drawImage(img, 0, 0, w, h);
+      var d = x.getImageData(0, 0, w, h).data;
+      for (var i = 3; i < d.length; i += 4) if (d[i] < 250) return true;
+      return false;
+    } catch (err) {
+      return false;
+    }
+  }
 
   function loadLogo(file) {
-    if (!file.type || file.type.indexOf('image/') !== 0) return;
+    if (!file || file.type.indexOf('image/') !== 0) return;
     var reader = new FileReader();
     reader.onload = function () {
       var img = new Image();
       img.onload = function () {
         state.logo = img;
-        el.logoThumb.src = reader.result;
-        el.logoSet.style.display = 'flex';
-        el.logoEmpty.style.display = 'none';
+        state.logoName = file.name;
+        state.logoDataUrl = reader.result;
+        state.logoHasAlpha = hasAlpha(img);
+
+        $('logoThumb').src = reader.result;
+        $('logoName').firstChild.nodeValue = file.name;
+        $('logoAlpha').textContent = state.logoHasAlpha
+          ? 'transparent — kept as is'
+          : 'no transparency detected';
+        $('logoAlpha').style.color = state.logoHasAlpha ? 'var(--good)' : 'var(--faint)';
+
+        logoEmpty.classList.add('hide');
+        $('logoLoaded').classList.remove('hide');
+        $('logoOpts').classList.remove('hide');
+
+        // A logo always destroys data. L and M cannot absorb that, so move to H.
         if (state.ec !== 'H') {
           state.ec = 'H';
-          setSeg(el.ecSeg, 'ec', 'H');
+          setSeg('ecSeg', 'H');
         }
         render();
       };
@@ -1132,272 +1804,87 @@
     reader.readAsDataURL(file);
   }
 
-  function palette() {
-    if (state.mode === 'simple') {
-      return { fg: '#000000', fg2: '#000000', bg: '#FFFFFF', fill: 'solid', shape: 'square' };
-    }
-    if (state.mode === 'colour') {
-      return {
-        fg: state.colour.fg, fg2: state.colour.fg,
-        bg: state.colour.bg, fill: 'solid', shape: 'square'
-      };
-    }
-    return {
-      fg: state.custom.fg, fg2: state.custom.fg2,
-      bg: state.custom.bg, fill: state.fill, shape: state.shape
-    };
-  }
+  logoEmpty.addEventListener('click', function () { logoInput.click(); });
+  logoInput.addEventListener('change', function (e) {
+    loadLogo(e.target.files[0]);
+    logoInput.value = '';
+  });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    logoEmpty.addEventListener(ev, function (e) { e.preventDefault(); logoEmpty.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    logoEmpty.addEventListener(ev, function (e) { e.preventDefault(); logoEmpty.classList.remove('over'); });
+  });
+  logoEmpty.addEventListener('drop', function (e) { loadLogo(e.dataTransfer.files[0]); });
 
-  function luminance(hex) {
-    var r = parseInt(hex.slice(1, 3), 16) / 255;
-    var g = parseInt(hex.slice(3, 5), 16) / 255;
-    var b = parseInt(hex.slice(5, 7), 16) / 255;
-    function f(c) { return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
-    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
-  }
-
-  function contrast(a, b) {
-    var la = luminance(a), lb = luminance(b);
-    var hi = Math.max(la, lb), lo = Math.min(la, lb);
-    return (hi + 0.05) / (lo + 0.05);
-  }
-
-  function isFinderZone(size, r, c) {
-    var inTL = r < 7 && c < 7;
-    var inTR = r < 7 && c >= size - 7;
-    var inBL = r >= size - 7 && c < 7;
-    return inTL || inTR || inBL;
-  }
-
-  function drawTo(ctx, qr, dim, pal) {
-    var size = qr.size;
-    var total = size + state.quiet * 2;
-    var unit = dim / total;
-    var off = state.quiet * unit;
-
-    ctx.fillStyle = pal.bg;
-    ctx.fillRect(0, 0, dim, dim);
-
-    var fillStyle;
-    if (pal.fill === 'linear') {
-      var lg = ctx.createLinearGradient(0, 0, dim, dim);
-      lg.addColorStop(0, pal.fg);
-      lg.addColorStop(1, pal.fg2);
-      fillStyle = lg;
-    } else if (pal.fill === 'radial') {
-      var rg = ctx.createRadialGradient(dim / 2, dim / 2, dim * 0.05, dim / 2, dim / 2, dim * 0.72);
-      rg.addColorStop(0, pal.fg);
-      rg.addColorStop(1, pal.fg2);
-      fillStyle = rg;
-    } else {
-      fillStyle = pal.fg;
-    }
-    ctx.fillStyle = fillStyle;
-
-    var pad = pal.shape === 'dot' ? unit * 0.12 : 0;
-
-    for (var r = 0; r < size; r++) {
-      for (var c = 0; c < size; c++) {
-        if (!qr.matrix[r][c]) continue;
-        var x = off + c * unit;
-        var y = off + r * unit;
-        var w = unit;
-
-        if (pal.shape === 'square' || isFinderZone(size, r, c)) {
-          ctx.fillRect(x, y, w + 0.35, w + 0.35);
-        } else if (pal.shape === 'rounded') {
-          roundRect(ctx, x, y, w, w, unit * 0.28);
-          ctx.fill();
-        } else {
-          ctx.beginPath();
-          ctx.arc(x + w / 2, y + w / 2, (w - pad * 2) / 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-
-    if (state.logo && state.mode === 'custom') {
-      var lw = dim * (state.logoPct / 100);
-      var lx = (dim - lw) / 2;
-      var padBox = lw * 0.12;
-
-      ctx.fillStyle = pal.bg;
-      roundRect(ctx, lx - padBox, lx - padBox, lw + padBox * 2, lw + padBox * 2, lw * 0.16);
-      ctx.fill();
-
-      var ar = state.logo.width / state.logo.height;
-      var dw = lw, dh = lw;
-      if (ar > 1) dh = lw / ar; else dw = lw * ar;
-      ctx.drawImage(state.logo, (dim - dw) / 2, (dim - dh) / 2, dw, dh);
-    }
-  }
-
-  function roundRect(ctx, x, y, w, h, r) {
-    r = Math.min(r, w / 2, h / 2);
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  var current = null;
-
-  function render() {
-    var text = state.text.trim();
-    var canvas = el.preview;
-
-    if (!text) {
-      current = null;
-      canvas.style.display = 'none';
-      el.emptyNote.style.display = '';
-      el.metaLeft.innerHTML = '&nbsp;';
-      el.metaRight.innerHTML = '&nbsp;';
-      el.advice.style.display = 'none';
-      el.dlPng.disabled = true;
-      el.dlSvg.disabled = true;
-      return;
-    }
-
-    var qr;
-    try {
-      qr = QREncoder.generate(text, { level: state.ec });
-    } catch (err) {
-      current = null;
-      canvas.style.display = 'none';
-      el.emptyNote.style.display = '';
-      el.emptyNote.textContent = err.message;
-      el.dlPng.disabled = true;
-      el.dlSvg.disabled = true;
-      return;
-    }
-
-    current = qr;
-    el.emptyNote.style.display = 'none';
-    canvas.style.display = 'block';
-
-    var pal = palette();
-    var dim = 600;
-    canvas.width = dim;
-    canvas.height = dim;
-    drawTo(canvas.getContext('2d'), qr, dim, pal);
-
-    el.metaLeft.textContent = 'Version ' + qr.version + ' · ' + qr.size + '×' + qr.size;
-    el.metaRight.textContent = text.length + ' chars · EC ' + state.ec;
-
-    var ratio = contrast(pal.fg, pal.bg);
-    var msgs = [];
-    var bad = false;
-
-    if (ratio < 3) {
-      msgs.push('Contrast is too low, this may not scan. Darken the code or lighten the background.');
-      bad = true;
-    } else if (ratio < 5) {
-      msgs.push('Contrast is on the low side. Test before printing.');
-      bad = true;
-    }
-
-    if (luminance(pal.fg) > luminance(pal.bg)) {
-      msgs.push('Light code on a dark background is inverted. Many scanners handle it, but some will not.');
-      bad = true;
-    }
-
-    if (state.logo && state.mode === 'custom' && state.logoPct > 20) {
-      msgs.push('A logo above 20% covers a lot of data. Reduce it if scanning fails.');
-      bad = true;
-    }
-
-    if (msgs.length) {
-      el.advice.className = 'warn';
-      el.advice.textContent = msgs.join(' ');
-      el.advice.style.display = '';
-    } else {
-      el.advice.className = 'warn ok';
-      el.advice.textContent = 'Looks good. Still worth a quick test with your phone.';
-      el.advice.style.display = '';
-    }
-
-    el.dlPng.disabled = false;
-    el.dlSvg.disabled = false;
-  }
-
-  function fileStem() {
-    var t = state.text.trim();
-    try {
-      var u = new URL(t);
-      return (u.hostname || 'qr').replace(/^www\./, '').replace(/[^a-z0-9.-]/gi, '');
-    } catch (e) {
-      return t.slice(0, 24).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'qr';
-    }
-  }
-
-  el.dlPng.addEventListener('click', function () {
-    if (!current) return;
-    var dim = state.px;
-    var c = document.createElement('canvas');
-    c.width = dim;
-    c.height = dim;
-    drawTo(c.getContext('2d'), current, dim, palette());
-    c.toBlob(function (blob) {
-      download(blob, fileStem() + '-qr.png');
-    }, 'image/png');
+  $('logoRemove').addEventListener('click', function () {
+    state.logo = null; state.logoDataUrl = ''; state.logoName = '';
+    logoEmpty.classList.remove('hide');
+    $('logoLoaded').classList.add('hide');
+    $('logoOpts').classList.add('hide');
+    render();
   });
 
-  el.dlSvg.addEventListener('click', function () {
-    if (!current) return;
-    var pal = palette();
-    var size = current.size;
-    var total = size + state.quiet * 2;
-    var parts = [];
+  slider('logoSize', 'logoSize', 'logoSizeVal', '%');
+  slider('logoPad', 'logoPad', 'logoPadVal', '%');
+  segment('plateSeg', 'plate');
 
-    parts.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total + '" width="' + state.px + '" height="' + state.px + '" shape-rendering="crispEdges">');
-
-    if (pal.fill !== 'solid') {
-      parts.push('<defs>');
-      if (pal.fill === 'linear') {
-        parts.push('<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + pal.fg + '"/><stop offset="1" stop-color="' + pal.fg2 + '"/></linearGradient>');
-      } else {
-        parts.push('<radialGradient id="g" cx="0.5" cy="0.5" r="0.72"><stop offset="0" stop-color="' + pal.fg + '"/><stop offset="1" stop-color="' + pal.fg2 + '"/></radialGradient>');
-      }
-      parts.push('</defs>');
-    }
-
-    var paint = pal.fill === 'solid' ? pal.fg : 'url(#g)';
-    parts.push('<rect width="' + total + '" height="' + total + '" fill="' + pal.bg + '"/>');
-    parts.push('<g fill="' + paint + '">');
-
-    for (var r = 0; r < size; r++) {
-      for (var c = 0; c < size; c++) {
-        if (!current.matrix[r][c]) continue;
-        var x = c + state.quiet;
-        var y = r + state.quiet;
-        if (pal.shape === 'dot' && !isFinderZone(size, r, c)) {
-          parts.push('<circle cx="' + (x + 0.5) + '" cy="' + (y + 0.5) + '" r="0.45"/>');
-        } else if (pal.shape === 'rounded' && !isFinderZone(size, r, c)) {
-          parts.push('<rect x="' + x + '" y="' + y + '" width="1" height="1" rx="0.28"/>');
-        } else {
-          parts.push('<rect x="' + x + '" y="' + y + '" width="1" height="1"/>');
-        }
-      }
-    }
-    parts.push('</g></svg>');
-
-    var blob = new Blob([parts.join('')], { type: 'image/svg+xml' });
-    download(blob, fileStem() + '-qr.svg');
+  /* ── presets ─────────────────────────────────────────── */
+  var presetBox = $('presets');
+  PRESETS.forEach(function (p) {
+    var b = document.createElement('button');
+    b.className = 'swatch';
+    b.title = p.name;
+    b.setAttribute('aria-label', p.name);
+    b.style.background = p.fill === 'solid'
+      ? p.fg
+      : 'linear-gradient(135deg, ' + p.fg + ', ' + p.fg2 + ')';
+    b.addEventListener('click', function () {
+      state.fill = p.fill; state.fg = p.fg; state.fg2 = p.fg2;
+      state.bg = p.bg; state.angle = p.angle;
+      state.dot = p.dot; state.eyeFrame = p.ef; state.eyeBall = p.eb;
+      syncCustomInputs();
+      render();
+    });
+    presetBox.appendChild(b);
   });
 
-  function download(blob, name) {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }, 1200);
+  function setSeg(id, value) {
+    var box = $(id);
+    if (!box) return;
+    Array.prototype.forEach.call(box.children, function (b) {
+      b.classList.toggle('on', b.dataset.v === value);
+    });
+  }
+
+  function syncCustomInputs() {
+    $('fg').value = state.fg; $('fgHex').value = state.fg.toUpperCase();
+    $('fg2').value = state.fg2; $('fg2Hex').value = state.fg2.toUpperCase();
+    $('bg').value = state.bg; $('bgHex').value = state.bg.toUpperCase();
+    $('angle').value = state.angle; $('angleVal').textContent = state.angle + '\u00B0';
+    setSeg('fillSeg', state.fill);
+    setSeg('dotSeg', state.dot);
+    setSeg('eyeFrameSeg', state.eyeFrame);
+    setSeg('eyeBallSeg', state.eyeBall);
+    var grad = state.fill !== 'solid';
+    document.querySelectorAll('.grad-only').forEach(function (el) { el.classList.toggle('hide', !grad); });
+  }
+
+  /* ── motion ──────────────────────────────────────────── */
+  requestAnimationFrame(function () { document.body.classList.add('go'); });
+
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var specks = $('specks');
+    for (var i = 0; i < 12; i++) {
+      var sp = document.createElement('span');
+      sp.className = 'speck';
+      sp.style.left = (Math.random() * 100).toFixed(2) + '%';
+      sp.style.top = (70 + Math.random() * 40).toFixed(2) + '%';
+      sp.style.animationDelay = (Math.random() * 16).toFixed(1) + 's';
+      sp.style.animationDuration = (13 + Math.random() * 12).toFixed(1) + 's';
+      sp.style.opacity = (0.12 + Math.random() * 0.28).toFixed(2);
+      specks.appendChild(sp);
+    }
   }
 
   syncCustomInputs();
