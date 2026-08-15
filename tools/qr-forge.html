@@ -30,6 +30,9 @@
                "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+    /* one width for every region, so all left and right edges line up */
+    --wrap: 1400px;
   }
 
   * { box-sizing: border-box; }
@@ -89,22 +92,18 @@
   @keyframes enter { to { opacity: 1; transform: none; } }
 
   /* ── header ────────────────────────────────────────────── */
-  header { padding: 34px 0 0; }
-  .back {
-    display: inline-flex; align-items: center; gap: 9px;
-    padding: 8px 14px 8px 11px; border-radius: 99px;
-    border: 1px solid var(--line-bright); background: var(--surface);
-    text-decoration: none;
-    font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
-    transition: color .18s, border-color .18s, transform .18s;
+  .hero {
+    max-width: var(--wrap);
+    padding: 40px 0 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    gap: 44px;
+    align-items: end;
   }
-  .back svg { color: var(--volt); transition: transform .3s cubic-bezier(.2,.75,.25,1); }
-  .back:hover { color: var(--text); border-color: var(--volt); transform: translateX(-3px); }
-  .back:hover svg { transform: scale(1.15); }
+  .hero-left { min-width: 0; }
 
   .eyebrow {
-    margin: 24px 0 12px; display: flex; align-items: center; gap: 12px;
+    margin: 0 0 14px; display: flex; align-items: center; gap: 12px;
     font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
     letter-spacing: 0.24em; text-transform: uppercase; color: var(--faint);
   }
@@ -120,32 +119,36 @@
     50% { opacity: .5; box-shadow: 0 0 0 9px rgba(56,189,248,0.03); }
   }
 
+  /* monospace wordmark — the vernacular of the thing it builds */
   h1.display {
-    margin: 0; font-family: var(--display); font-weight: 900;
-    text-transform: uppercase; letter-spacing: -0.04em; line-height: .88;
-    font-size: clamp(2.6rem, 8vw, 5.6rem);
+    margin: 0;
+    font-family: var(--mono);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
+    line-height: .95;
+    font-size: clamp(2.3rem, 6.2vw, 4.6rem);
+    display: flex; align-items: baseline; flex-wrap: wrap;
   }
-  h1.display .forge { color: var(--tint); }
-  @supports (-webkit-text-stroke: 1px #000) {
-    h1.display .forge { color: transparent;
-      -webkit-text-stroke: clamp(1.2px, 0.3vw, 2.6px) var(--tint); }
+  h1.display .forge { color: var(--tint); margin-left: .14em; }
+
+  .tag {
+    margin: 20px 0 0; max-width: 54ch;
+    font-family: var(--mono);
+    font-size: .78rem; line-height: 1.75; letter-spacing: .01em;
+    color: var(--dim);
   }
-  .tag { margin: 18px 0 0; max-width: 60ch; font-size: .95rem; line-height: 1.62; color: var(--dim); }
-  .tag strong { color: var(--text); font-weight: 600; }
-  .local-note {
-    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
-    font-family: var(--mono); font-size: .68rem; letter-spacing: .04em; color: var(--dim);
-  }
-  .led { width: 7px; height: 7px; border-radius: 50%; background: var(--live);
-    box-shadow: 0 0 0 3px rgba(248,113,113,.16); animation: pulse 2.4s ease-in-out infinite; }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 3px rgba(248,113,113,.16); }
-    50% { opacity: .55; box-shadow: 0 0 0 6px rgba(248,113,113,.05); }
+  .tag strong { color: var(--text); font-weight: 700; }
+
+  .pick-label {
+    margin: 0 0 10px;
+    font-family: var(--mono); font-size: .64rem; font-weight: 600;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--faint);
   }
 
   /* ── mode switch ───────────────────────────────────────── */
   .modes {
-    margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    display: grid; grid-template-columns: 1fr; gap: 10px;
   }
   .mode {
     position: relative; overflow: hidden; text-align: left;
@@ -173,15 +176,16 @@
 
   /* ── workspace ─────────────────────────────────────────── */
   .workspace {
-    margin-top: 20px;
-    display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
-    gap: 18px; align-items: start;
+    margin-top: 22px;
+    max-width: var(--wrap);
+    display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+    gap: 22px; align-items: start;
   }
 
   .stage {
     position: sticky; top: 18px;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: 18px; padding: 18px; overflow: hidden;
+    border-radius: 18px; padding: 20px; overflow: hidden;
   }
   .canvas-wrap {
     position: relative; border-radius: 14px; overflow: hidden;
@@ -196,6 +200,13 @@
     display: grid; place-items: center; padding: 14px;
   }
   #preview { width: 100%; height: auto; display: block; border-radius: 6px; }
+  .canvas-wrap { position: relative; }
+  .canvas-empty {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    border-radius: 14px; background: rgba(11,13,18,.86);
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--faint); pointer-events: none;
+  }
 
   .stage-meta {
     display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
@@ -214,14 +225,16 @@
   .stage-actions .wide { grid-column: 1 / -1; }
 
   /* ── controls ──────────────────────────────────────────── */
-  .panel-stack { display: grid; gap: 14px; }
+  .panel-stack { display: grid; gap: 16px; }
+  /* the custom groups live inside a wrapper, so they need their own gap */
+  #customPanels { display: grid; gap: 16px; }
   .group {
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 18px; overflow: hidden;
   }
   .group > summary {
     list-style: none; cursor: pointer; user-select: none;
-    padding: 15px 18px; display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px; display: flex; align-items: center; gap: 10px;
     font-family: var(--mono); font-size: .7rem; font-weight: 700;
     letter-spacing: .16em; text-transform: uppercase; color: var(--dim);
     transition: color .18s, background .18s;
@@ -235,9 +248,9 @@
   }
   .group[open] > summary { color: var(--tint); }
   .group[open] > summary::after { transform: rotate(-135deg) translateY(-2px); }
-  .group-body { padding: 4px 18px 18px; display: grid; gap: 14px; }
+  .group-body { padding: 2px 20px 20px; display: grid; gap: 18px; }
 
-  .row { display: grid; gap: 7px; }
+  .row { display: grid; gap: 9px; }
   .row > label, .lbl {
     font-family: var(--mono); font-size: .64rem; font-weight: 600;
     letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
@@ -245,7 +258,7 @@
   }
   .lbl .val { margin-left: auto; color: var(--tint); font-variant-numeric: tabular-nums; }
 
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
 
   input[type=text], input[type=number], textarea, select {
     width: 100%; padding: 11px 13px;
@@ -258,10 +271,10 @@
   input:focus, textarea:focus, select:focus { outline: none; border-color: var(--tint); background: rgba(0,0,0,.5); }
   input[type=range] { width: 100%; accent-color: var(--tint); height: 3px; cursor: pointer; }
 
-  .seg { display: flex; gap: 5px; flex-wrap: wrap; }
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
   .seg button {
-    flex: 1 1 auto; min-width: 58px;
-    padding: 9px 10px; border-radius: 10px;
+    flex: 1 1 0; min-width: 66px; max-width: 150px;
+    padding: 9px 12px; border-radius: 10px;
     border: 1px solid var(--line); background: var(--surface-2);
     color: var(--dim); cursor: pointer;
     font-family: var(--mono); font-size: .66rem; font-weight: 600;
@@ -360,6 +373,7 @@
   .ghost.ok { color: var(--good); border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); }
 
   footer {
+    max-width: var(--wrap);
     margin-top: 46px; padding-top: 24px; border-top: 1px solid var(--line);
     display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; color: var(--faint);
@@ -376,14 +390,16 @@
   .hide { display: none !important; }
 
   @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 26px; align-items: start; }
+    .hero-right .modes { grid-template-columns: 1fr 1fr; }
     .workspace { grid-template-columns: 1fr; }
     .stage { position: static; }
     .canvas-wrap { max-width: 420px; margin: 0 auto; }
   }
   @media (max-width: 560px) {
     .shell { padding: 0 16px 64px; }
-    header { padding-top: 22px; }
-    .modes { grid-template-columns: 1fr; }
+    .hero { padding-top: 24px; }
+    .hero-right .modes { grid-template-columns: 1fr; }
     .two { grid-template-columns: 1fr; }
     .stage-actions { grid-template-columns: 1fr; }
     .seg button { min-width: 0; flex: 1 1 30%; }
@@ -406,33 +422,30 @@
 
 <div class="shell">
 
-  <header>
-    <a class="back reveal d1" href="https://msubham06.github.io/Free-Toolkit/">
-      <svg width="13" height="13" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-        <path d="M21 2.5 6.5 18.75h7.1L11 29.5 25.5 13.25h-7.1z"/>
-      </svg>
-      Free Toolkit
-    </a>
+  <header class="hero">
+    <div class="hero-left">
+      <p class="eyebrow reveal d1">Generator</p>
+      <h1 class="display reveal d2">QR<span class="forge">FORGE</span></h1>
+      <p class="tag reveal d3">
+        Turn any link or text into a QR code. Start plain, or switch to Custom for gradients, module
+        shapes, styled eyes and a transparent logo. <strong>Export as PNG or SVG.</strong>
+      </p>
+    </div>
 
-    <p class="eyebrow reveal d2">Generator &middot; one HTML file</p>
-    <h1 class="display reveal d3">QR <span class="forge">Forge</span></h1>
-    <p class="tag reveal d4">
-      Turn any link or text into a QR code. Start plain, or switch to Custom for gradients, module
-      shapes, styled eyes and a transparent logo. <strong>Export as PNG or SVG.</strong>
-    </p>
-    <p class="local-note reveal d4"><span class="led" aria-hidden="true"></span> Nothing is uploaded — this all runs on your device.</p>
+    <div class="hero-right reveal d4">
+      <p class="pick-label">Choose a mode</p>
+      <div class="modes" id="modes">
+        <button class="mode on" data-mode="basic">
+          <b>Basic</b>
+          <span>Paste a link &middot; get a QR</span>
+        </button>
+        <button class="mode" data-mode="custom">
+          <b>Custom</b>
+          <span>Colours &middot; shapes &middot; logo</span>
+        </button>
+      </div>
+    </div>
   </header>
-
-  <div class="modes reveal d5" id="modes">
-    <button class="mode on" data-mode="basic">
-      <b>Basic</b>
-      <span>Paste a link &middot; get a QR</span>
-    </button>
-    <button class="mode" data-mode="custom">
-      <b>Custom</b>
-      <span>Colours &middot; shapes &middot; logo</span>
-    </button>
-  </div>
 
   <div class="workspace reveal d5">
 
@@ -440,6 +453,7 @@
     <div class="stage">
       <div class="canvas-wrap">
         <canvas id="preview" width="600" height="600"></canvas>
+        <div class="canvas-empty" id="canvasEmpty">Paste a link to start</div>
       </div>
 
       <div class="stage-meta">
@@ -465,7 +479,7 @@
         <div class="group-body">
           <div class="row">
             <label for="content">Link or text</label>
-            <textarea id="content" spellcheck="false" placeholder="https://example.com">https://msubham06.github.io/Free-Toolkit/</textarea>
+            <textarea id="content" spellcheck="false" placeholder="https://example.com"></textarea>
           </div>
           <p class="hintline" id="lenHint">0 characters</p>
         </div>
@@ -683,7 +697,7 @@
   </div>
 
   <footer>
-    <span>QR Forge &middot; one HTML file &middot; works offline</span>
+    <a href="https://msubham06.github.io/Free-Toolkit/">&#8592; Free Toolkit</a>
     <span class="spacer"></span>
     <span>Built with <span class="heart">&#9829;</span> by <a href="https://github.com/MSubham06" target="_blank" rel="noopener noreferrer">Subham</a></span>
   </footer>
@@ -1169,7 +1183,7 @@
 
   var state = {
     mode: 'basic',
-    content: 'https://msubham06.github.io/Free-Toolkit/',
+    content: '',
     // basic
     bSize: 600,
     bTransparent: false,
@@ -1427,6 +1441,22 @@
 
   function render() {
     var o = currentOpts();
+    var len = (state.content || '').length;
+    $('lenHint').textContent = len + ' character' + (len === 1 ? '' : 's');
+
+    var blank = !state.content.trim();
+    $('canvasEmpty').classList.toggle('hide', !blank);
+    ['dlPng', 'dlSvg', 'copyBtn'].forEach(function (id) { $(id).disabled = blank; });
+
+    if (blank) {
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      $('mVersion').textContent = '\u2013';
+      $('mSize').textContent = '\u2013';
+      $('mLevel').textContent = o.ec;
+      $('mScan').className = 'chip hide';
+      return;
+    }
+
     var px = Math.min(1000, o.size);   // preview is capped; export uses the full size
     var qr = paintTo(canvas, px, o);
     if (!qr) return;
@@ -1459,9 +1489,6 @@
     } else {
       scan.className = 'chip hide';
     }
-
-    var len = (state.content || '').length;
-    $('lenHint').textContent = len + ' character' + (len === 1 ? '' : 's');
   }
 
   /* ── export ──────────────────────────────────────────── */

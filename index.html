@@ -53,6 +53,19 @@
 
   :focus-visible { outline: 2px solid var(--volt); outline-offset: 3px; border-radius: 4px; }
 
+  /* ── scrollbar ─────────────────────────────────────────── */
+  html { scrollbar-width: thin; scrollbar-color: var(--volt-deep) var(--bg); }
+  ::-webkit-scrollbar { width: 11px; height: 11px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--volt), var(--volt-deep));
+    border-radius: 99px;
+    border: 3px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--volt); }
+  ::-webkit-scrollbar-corner { background: var(--bg); }
+  ::selection { background: var(--volt); color: #16130a; }
+
   /* ── ambient background ────────────────────────────────── */
   .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 
@@ -93,10 +106,10 @@
     100% { transform: translateY(-92vh) scale(1); opacity: 0; }
   }
 
-  .shell { max-width: 1120px; margin: 0 auto; padding: 0 24px; position: relative; }
+  .shell { max-width: none; margin: 0; padding: 0 clamp(20px, 4vw, 60px); position: relative; }
 
   /* ── hero ──────────────────────────────────────────────── */
-  .hero { padding: clamp(64px, 13vh, 130px) 0 0; }
+  .hero { padding: clamp(76px, 12vh, 150px) 0 0; }
 
   .eyebrow {
     font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
@@ -189,7 +202,7 @@
   /* ── tools ─────────────────────────────────────────────── */
   .tools { padding: 66px 0 20px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
 
   .tool {
     position: relative;
@@ -401,9 +414,10 @@
   }
   .backdrop.on .panel { transform: none; }
 
-  .panel-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+  .panel-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .panel-head > div:first-child { flex: 1; min-width: 0; }
   .panel-head h2 {
-    margin: 0; flex: 1;
+    margin: 0;
     font-family: var(--display); font-size: 1.35rem; font-weight: 800;
     letter-spacing: -0.025em; text-transform: uppercase;
   }
@@ -436,14 +450,14 @@
 
   .dev-grid {
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    gap: 18px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 16px;
     align-items: start;
   }
   .dev-photo {
     position: relative;
     aspect-ratio: 3 / 4;
-    border-radius: 15px;
+    border-radius: 14px;
     overflow: hidden;
     background: linear-gradient(150deg, var(--surface-2), #0d1017);
     border: 1px solid var(--line-bright);
@@ -460,31 +474,24 @@
   .dev-photo .fallback {
     position: absolute; inset: 0;
     display: grid; place-items: center;
-    font-family: var(--display); font-weight: 900; font-size: 2.4rem;
+    font-family: var(--display); font-weight: 900; font-size: 2.2rem;
     letter-spacing: -0.04em; color: var(--volt);
   }
   .dev-info b {
-    display: block; font-family: var(--display); font-size: 1.35rem;
+    display: block; font-family: var(--display); font-size: 1.3rem;
     font-weight: 800; letter-spacing: -0.025em; text-transform: uppercase;
   }
   .dev-info .role {
-    display: block; margin-top: 4px;
-    font-family: var(--mono); font-size: 0.68rem;
+    display: block; margin-top: 3px;
+    font-family: var(--mono); font-size: 0.66rem;
     letter-spacing: 0.08em; text-transform: uppercase; color: var(--volt);
   }
   .dev-info .bio {
-    margin: 12px 0 0;
-    font-size: 0.86rem; line-height: 1.62; color: var(--dim);
-  }
-  .dev-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .dev-tags span {
-    font-family: var(--mono); font-size: 0.64rem;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 4px 9px; border-radius: 99px;
-    border: 1px solid var(--line); background: var(--surface-2); color: var(--faint);
+    margin: 9px 0 0;
+    font-size: 0.85rem; line-height: 1.55; color: var(--dim);
   }
 
-  .links { display: grid; gap: 8px; margin-top: 14px; }
+  .links { display: grid; gap: 7px; margin-top: 16px; }
   .link {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 14px; border-radius: 12px;
@@ -504,7 +511,8 @@
 
   @media (max-width: 640px) {
     .shell { padding: 0 18px; }
-    .hero { padding-top: 56px; }
+    .grid { gap: 16px; }
+    .hero { padding-top: 40px; }
     .tool-actions { flex-wrap: wrap; }
     .btn-open, .btn-get { flex: 1 1 100%; }
     .strip { padding: 20px; }
@@ -512,8 +520,8 @@
     .strip-actions .btn { flex: 1 1 100%; }
     .panel { padding: 20px; }
     .fab { right: 16px; bottom: 16px; }
-    .dev-grid { grid-template-columns: 110px minmax(0, 1fr); gap: 14px; }
-    .dev-info .bio { font-size: 0.84rem; }
+    .dev-grid { grid-template-columns: 104px minmax(0, 1fr); gap: 13px; }
+    .dev-info .bio { font-size: 0.82rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -611,7 +619,7 @@
 
     <h4>Two ways to use a tool</h4>
     <p><strong>Open tool</strong> loads it in a new tab and you start working straight away.
-       <strong>Download</strong> saves that single file into your Downloads folder. Double-click it later
+       <strong>Download</strong> asks you where to save that single file. Double-click it later
        and it opens in your browser and works exactly the same — on a plane, on college Wi-Fi, with the
        internet switched off entirely.</p>
 
@@ -649,13 +657,10 @@
 
       <div class="dev-info">
         <b>Subham</b>
-        <span class="role">Full Stack Developer &amp; UI/UX Designer</span>
-        <p class="bio">Final-year Computer Science student and a freelance developer. I build web apps,
-           design interfaces in Figma, and make small tools like these when the existing ones annoy me.
-           If something here saved you time, a star on the repo is the nicest way to say thanks.</p>
-        <div class="dev-tags">
-          <span>React</span><span>Tailwind</span><span>Figma</span><span>Java</span><span>Spring Boot</span>
-        </div>
+        <span class="role">Computer Science graduate &middot; Developer</span>
+        <p class="bio">I built these because every other site wanted an ad break, a login, or an upload
+           before it would do a ten-second job. So I wrote my own — free, ad-free, no account, nothing
+           collected. If one of them saved you time, a star on the repo is the nicest way to say thanks.</p>
       </div>
     </div>
 
@@ -690,21 +695,21 @@ const TOOLS = [
   {
     name: "QR Forge",
     file: "tools/qr-forge.html",
-    size: "47 KB",
+    size: "73 KB",
     kind: "Generator",
     tint: "#38bdf8",
     tintDeep: "#0284c7",
-    desc: "Turn any link or text into a QR code. Keep it plain black and white, pick your own colours, or go custom with gradients, presets, and a logo in the middle. Export as a sharp PNG or a scalable SVG.",
+    desc: "Turn any link or text into a QR code. Basic gives you a clean, maximally scannable code in one step. Custom opens up gradients, module and eye shapes, presets and a transparent logo. Export as PNG or SVG.",
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></svg>'
   },
   {
     name: "Frame Grab",
     file: "tools/frame-grab.html",
-    size: "21 KB",
+    size: "69 KB",
     kind: "Extractor",
     tint: "#a78bfa",
     tintDeep: "#7c3aed",
-    desc: "Pull poster frames out of your video files and save them as JPEGs, named to match the source. Pick from six suggested frames per video or scrub to the exact moment you want. No ffmpeg, no install.",
+    desc: "Scrub a video frame by frame and pull out exactly the still you want. Crop to a ratio, fix the colour, capture as many frames as you like, then export them as files, a ZIP, or one contact sheet.",
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><circle cx="8" cy="10" r="1.7"/><path d="M3 16.5l4.5-4.5 3.2 3.2 3.3-3.8L21 17"/></svg>'
   }
 ];
@@ -736,7 +741,7 @@ document.getElementById("grid").innerHTML = TOOLS.map(t => `
       </a>
       <a class="btn btn-get" href="${esc(t.file)}" download="${esc(t.file.split("/").pop())}"
          data-download="${esc(t.file)}"
-         title="Save ${esc(t.name)} to your Downloads folder">
+         title="Download ${esc(t.name)} to keep and run offline">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14"/></svg>
         <span class="label">Download</span>
       </a>
